@@ -5,7 +5,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import android.graphics.Color;
 import android.util.Log;
 
-import com.example.chattest.LoginActivity;
+import com.example.chattest.MainActivity;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
 
@@ -23,7 +23,7 @@ public class SendingQueue {
 
     private Socket socket;
     private OutputStream outputStream;
-    private final LoginActivity core;
+    private final MainActivity core;
 
     private synchronized void writeToSocketStreamSync(byte[] data) throws IOException {
         //Log.d(Constants.TAG, "OPENED SYNC METHOD to send: " + data.length + " bytes");
@@ -31,7 +31,7 @@ public class SendingQueue {
         outputStream.flush();//TODO???
     }
 
-    public SendingQueue(Socket skt, LoginActivity core) {
+    public SendingQueue(Socket skt, MainActivity core) {
         threadPoolExecutor = (ThreadPoolExecutor) newFixedThreadPool(1);
 
         socket = skt;
@@ -59,9 +59,9 @@ public class SendingQueue {
                     data.setFromThisDevice(true);
 
                     core.addProtocolNode(Color.parseColor("#FCE4EC"), data);
-                    core.runOnUiThread(() ->
-                            core.editTextMessage.setText("")
-                    );
+//                    core.runOnUiThread(() ->
+//                            core.editTextMessage.setText("")
+//                    );
                 }
             } catch (IOException e) {
                 Log.d(Constants.TAG, "Can't send message: " + e);

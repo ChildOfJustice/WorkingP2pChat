@@ -5,7 +5,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import android.graphics.Color;
 import android.util.Log;
 
-import com.example.chattest.LoginActivity;
+import com.example.chattest.MainActivity;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
 
@@ -23,10 +23,10 @@ public class Receiver extends Thread {
 
     private Socket socket;
     private InputStream inputStream;
-    private final LoginActivity core;
+    private final MainActivity core;
     private boolean running = true;
 
-    public Receiver(Socket skt, LoginActivity core) {
+    public Receiver(Socket skt, MainActivity core) {
         deserializationQueue = (ThreadPoolExecutor) newFixedThreadPool(1);
 
         socket = skt;
@@ -76,6 +76,8 @@ public class Receiver extends Thread {
             } else {
                 Log.d(Constants.TAG, "Received a msg: " + new String(protocol.getData()));
                 protocol.setFromThisDevice(false);
+
+
                 core.addProtocolNode(Color.parseColor("#000000"), protocol);
                 //core.handler.obtainMessage(Constants.MESSAGE_READ, receivedBytes, -1, data).sendToTarget();
             }

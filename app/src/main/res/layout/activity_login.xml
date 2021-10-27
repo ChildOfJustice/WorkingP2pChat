@@ -33,7 +33,7 @@
         android:layout_gravity="center"
         android:layout_marginTop="20dp"
         android:ems="10"
-        android:inputType="number"
+        android:inputType="number|text"
         android:text="another IP" />
 
     <EditText

@@ -4,14 +4,16 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.example.chattest.LoginActivity;
+import com.example.chattest.MainActivity;
 import com.example.chattest.utils.Constants;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class NetworkManager {
-    private final LoginActivity core;
+public class NetworkManager implements Serializable{
+    private MainActivity core;
 
     public SendingQueue sendingQueue;
 
@@ -20,12 +22,15 @@ public class NetworkManager {
     public ClientClass clientClass;
     public ServerClass serverClass;
 
-    public NetworkManager(LoginActivity core) {
+    public NetworkManager(MainActivity core) {
         this.core = core;
+    }
+    public NetworkManager(LoginActivity core) {
+//        this.core = core;
     }
 
     // server class for listening
-    public class ServerClass extends Thread {
+    public class ServerClass extends Thread implements Serializable{
 
         public Socket socket;
         ServerSocket serverSocket;
@@ -61,7 +66,7 @@ public class NetworkManager {
     }
 
     // client class for sending
-    public class ClientClass extends Thread {
+    public class ClientClass extends Thread implements Serializable{
         public Socket socket;
         String hostAdd;
         int port;
