@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:id="@+id/ChatView"
+        android:layout_height="650dp" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_gravity="bottom|right"
+
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_action_name" />
+
+    <EditText
+        android:id="@+id/editTextMessage"
+        android:layout_width="250dp"
+        android:layout_height="75dp"
+        android:layout_gravity="bottom|left"
+        android:ems="10"
+        android:inputType="textPersonName" />
+
+    <ImageButton
+        android:id="@+id/imageButtonSendMessage"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="80dp"
+        android:layout_marginBottom="14dp"
+        android:onClick="SendMessage"
+        app:srcCompat="@android:drawable/ic_menu_send" />
+
+    <include layout="@layout/fab_layout" />
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
