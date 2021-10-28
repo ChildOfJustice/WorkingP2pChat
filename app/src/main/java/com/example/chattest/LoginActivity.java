@@ -37,10 +37,6 @@ import java.util.List;
 
 public class LoginActivity extends AppCompatActivity {
 
-    NetworkManager networkManager = new NetworkManager(this);
-
-
-
     EditText editTextPortYou, editTextPortAnother, editTextAnotherIP;
     //Получение IP адреса нажатием кнопки
     public void GetIP(View view){
@@ -83,65 +79,54 @@ public class LoginActivity extends AppCompatActivity {
 
     public void ClickConnect(View view) {
 
-
-
-
-
         String port = editTextPortAnother.getText().toString();
         String targetIP = editTextAnotherIP.getText().toString();
 //        String encryptKey = encrypKeyEditText.getText().toString(); // taking the encryption key shift number
 //        shift = Integer.parseInt(encryptKey);
 
         // checking is empty or not
-//        if (TextUtils.isEmpty(port)) {
-//            targetPortEditText.requestFocus();
-//            targetPortEditText.setError("Please write your target port first");
-//        }
-
-        // checking self ip or not
-//        else if (targetIP.equals(ip)) {
-//            targetIPEditText.requestFocus();
-//            targetIPEditText.setError("This is your self IP, please change it");
-//        }
-
+        if (TextUtils.isEmpty(port)) {
+            editTextPortAnother.requestFocus();
+            editTextPortAnother.setError("Please write your target port first");
+        }
         // connect, and redirect to chat screen
-//        else {
+        else {
             try {
 //                networkManager.createClientThread(targetIP, port);
 //                networkManager.clientClass.start();
 
                 // show success message
-//                Toast.makeText(this, "your sending port and listening port has been set successfully", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "your sending port and listening port has been set successfully", Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("YouPort", editTextPortYou.getText().toString());
                 intent.putExtra("AnotherPort", editTextPortAnother.getText().toString());
                 intent.putExtra("AnotherIP", editTextAnotherIP.getText().toString());
-                intent.putExtra("NetworkManager", networkManager);
+//                intent.putExtra("NetworkManager", networkManager);
                 //intent.putExtra("KeyValue", ***);
                 startActivity(intent);
             } catch (Exception e) {
                 Log.e(Constants.TAG, "ERROR: " + e);
                 Toast.makeText(this, "Can't connect with server, please check all the requirements", Toast.LENGTH_SHORT).show();
             }
-//        }
+        }
     }
 
     public void ClickListenPort(View view) {
         if(true)
             return;
-//        нажатие кнопки listenPort
+
+
         String port = editTextPortYou.getText().toString(); // getting the port from edittext
 
         //TODO
         // checking if port is empty or not
-//        if (TextUtils.isEmpty(port)) {
-//            receivePortEditText.requestFocus(); // focusing as an error
-//            receivePortEditText.setError("Please write your receive port first"); // showing what need to avoid the error
-//        }
-
+        if (TextUtils.isEmpty(port)) {
+            editTextPortYou.requestFocus(); // focusing as an error
+            editTextPortYou.setError("Please write your receive port first"); // showing what need to avoid the error
+        }
         // if there's a valid input then create a server class on that port so that the client can take data from that port
-//        else {
+        else {
             try {
 //                networkManager.createServerThread(port);
 //                networkManager.serverClass.start();
@@ -156,11 +141,8 @@ public class LoginActivity extends AppCompatActivity {
 
             } catch (Exception e) {
                 Log.e(Constants.TAG, e.getMessage());
-//                Toast.makeText(MainActivity.this, "Can't start server, please check the port number first", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Can't start server, please check the port number first", Toast.LENGTH_SHORT).show();
             }
-//        }
+        }
     }
-
-
-
 }

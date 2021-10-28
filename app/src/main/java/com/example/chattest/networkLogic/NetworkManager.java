@@ -3,7 +3,6 @@ package com.example.chattest.networkLogic;
 import android.os.Looper;
 import android.util.Log;
 
-import com.example.chattest.LoginActivity;
 import com.example.chattest.MainActivity;
 import com.example.chattest.utils.Constants;
 
@@ -25,9 +24,6 @@ public class NetworkManager implements Serializable{
     public NetworkManager(MainActivity core) {
         this.core = core;
     }
-    public NetworkManager(LoginActivity core) {
-//        this.core = core;
-    }
 
     // server class for listening
     public class ServerClass extends Thread implements Serializable{
@@ -48,7 +44,6 @@ public class NetworkManager implements Serializable{
                 serverSocket = new ServerSocket(port);
                 Looper.prepare();
 
-                //TODO:
                 //core.showToast("Server Started. Waiting for client...");
 
                 Log.d(Constants.TAG, "Waiting for client...");
@@ -89,9 +84,6 @@ public class NetworkManager implements Serializable{
 
                 Log.d(Constants.TAG, "Client is connected to server");
 
-                // enabling invisible components
-                //TODO:
-//                core.enableComponent();
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.d(Constants.TAG, "Can't connect to server. Check the IP address and Port number and try again: " + e);
@@ -100,7 +92,6 @@ public class NetworkManager implements Serializable{
             }
         }
     }
-
 
     public void createServerThread(String port) {
         serverClass = new ServerClass(Integer.parseInt(port));

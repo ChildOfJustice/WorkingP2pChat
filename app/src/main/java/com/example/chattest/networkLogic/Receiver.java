@@ -2,7 +2,6 @@ package com.example.chattest.networkLogic;
 
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
-import android.graphics.Color;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
@@ -25,6 +24,8 @@ public class Receiver extends Thread {
     private InputStream inputStream;
     private final MainActivity core;
     private boolean running = true;
+
+//    public AddProtocolNodeHandler showProtocolNodeHandler;
 
     public Receiver(Socket skt, MainActivity core) {
         deserializationQueue = (ThreadPoolExecutor) newFixedThreadPool(1);
@@ -77,8 +78,8 @@ public class Receiver extends Thread {
                 Log.d(Constants.TAG, "Received a msg: " + new String(protocol.getData()));
                 protocol.setFromThisDevice(false);
 
+               core.addProtocolNode(protocol);
 
-                core.addProtocolNode(Color.parseColor("#000000"), protocol);
                 //core.handler.obtainMessage(Constants.MESSAGE_READ, receivedBytes, -1, data).sendToTarget();
             }
         };

@@ -2,7 +2,6 @@ package com.example.chattest.networkLogic;
 
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
-import android.graphics.Color;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
@@ -28,7 +27,7 @@ public class SendingQueue {
     private synchronized void writeToSocketStreamSync(byte[] data) throws IOException {
         //Log.d(Constants.TAG, "OPENED SYNC METHOD to send: " + data.length + " bytes");
         outputStream.write(data);
-        outputStream.flush();//TODO???
+        outputStream.flush();
     }
 
     public SendingQueue(Socket skt, MainActivity core) {
@@ -58,10 +57,7 @@ public class SendingQueue {
 
                     data.setFromThisDevice(true);
 
-                    core.addProtocolNode(Color.parseColor("#FCE4EC"), data);
-//                    core.runOnUiThread(() ->
-//                            core.editTextMessage.setText("")
-//                    );
+                    core.addProtocolNode(data);
                 }
             } catch (IOException e) {
                 Log.d(Constants.TAG, "Can't send message: " + e);
@@ -91,80 +87,6 @@ public class SendingQueue {
         };
 
         threadPoolExecutor.execute(task);
-    }
-
-    // writing
-//    public void write(String msg) {
-//        new Thread(() -> {
-//            try {
-//                byte[] bytes = new byte[0];
-//                outputStream.write(msg.getBytes());
-//                core.addMessage(Color.parseColor("#FCE4EC"), msg, bytes);
-//                core.runOnUiThread(() ->
-//                        core.messageEditText.setText("")
-//                );
-//            } catch (IOException e) {
-//                Log.d(Constants.TAG, "Can't send message: " + e);
-//            } catch (Exception e) {
-//                Log.d(Constants.TAG, "Error: " + e);
-//            }
-//        }).start();
-//
-//    }
-//
-//    public void sendFile(File file) {
-//
-//        String fileLengthStr = String.valueOf(file.length());
-//        Protocol startFileMsg = new Protocol();
-//        startFileMsg.setMsgCode(MsgCodes.fileStartCode);
-//        startFileMsg.setCurrentTime();
-//        startFileMsg.setData(fileLengthStr.getBytes());
-//        sendNode(startFileMsg);
-//
-//        Runnable task = () -> {
-//            char[] myBuffer = new char[512];
-//            int bytesRead = 0;
-//            BufferedReader in = null;
-//            try {
-//                in = new BufferedReader(new FileReader(file));
-//
-//                while ((bytesRead = in.read(myBuffer, 0, myBuffer.length)) != -1)
-//                {
-//                    Protocol ourMsgProtocol = new Protocol();
-//                    ourMsgProtocol.setMsgCode(MsgCodes.fileCode);
-//                    ourMsgProtocol.setCurrentTime();
-//                    ourMsgProtocol.setData(toBytes(myBuffer));
-//
-//                    sendNode(ourMsgProtocol); // send the todo encrypted message
-//                }
-//
-//                String lastNodeBytesCount = String.valueOf(bytesRead);
-//                Protocol endFileMsg = new Protocol();
-//                endFileMsg.setMsgCode(MsgCodes.fileEndCode);
-//                endFileMsg.setCurrentTime();
-//                endFileMsg.setData(lastNodeBytesCount.getBytes());
-//                sendNode(endFileMsg);
-//
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        };
-//        threadPoolExecutor.execute(task);
-//    }
-    byte[] toBytes(char[] chars) {
-        CharBuffer charBuffer = CharBuffer.wrap(chars);
-        ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(charBuffer);
-        byte[] bytes = Arrays.copyOfRange(byteBuffer.array(),
-                byteBuffer.position(), byteBuffer.limit());
-        Arrays.fill(byteBuffer.array(), (byte) 0); // clear sensitive data
-        return bytes;
-    }
-
-
-    public boolean allMsgsAreSent(){
-        long submitted = threadPoolExecutor.getTaskCount();
-        long completed = threadPoolExecutor.getCompletedTaskCount();
-        return (submitted - completed) == 0; // approximate
     }
 
     public void dispose(){

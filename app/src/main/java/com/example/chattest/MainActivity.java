@@ -97,13 +97,12 @@ public class MainActivity extends AppCompatActivity {
         FloatingActionButton fab =  findViewById(R.id.fab);
         Bundle arguments = getIntent().getExtras();
 //        networkManager = (NetworkManager) getIntent().getSerializableExtra("NetworkManager");
+
         String AnotherIP = arguments.get("AnotherIP").toString();
         String YouPort = arguments.get("YouPort").toString();
         String AnotherPort = arguments.get("AnotherPort").toString();
-//        networkManager = (NetworkManager) arguments.get("NetworkManager");
-//        networkManager = (NetworkManager) arguments.getSerializable("NetworkManager");
-        networkManager = new NetworkManager(this);
 
+        networkManager = new NetworkManager(this);
 
         startServer(YouPort);
         connect(AnotherIP, AnotherPort);
@@ -151,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
             ourMsgProtocol.setCurrentTime();
             ourMsgProtocol.setData(msg.getBytes());
 
-            //TODO networkManager должен быть или в MainActivity или в LoginActivity, либо как-то через Intent intent = new Intent(this, MainActivity.class); получать его в LoginActivity из MainActivity, но я не понимаю что такое Intent вообще
             networkManager.sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
 
             editTextMessage.setText("");
@@ -184,12 +182,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public void addProtocolNode(int color, Protocol messageProtocol) {
+    public void addProtocolNode(Protocol messageProtocol) {
         Log.d(Constants.TAG, "got protocol node with code: " + messageProtocol.getMsgCode());
         runOnUiThread(() -> {
-                    protocols.add(messageProtocol);
-                    adapter.notifyDataSetChanged();
-                });
+            protocols.add(messageProtocol);
+            adapter.notifyDataSetChanged();
+        });
 
 //        runOnUiThread(() -> {
 //                    TextView textView = new TextView(this);
