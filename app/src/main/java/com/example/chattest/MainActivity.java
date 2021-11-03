@@ -189,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
             adapter.notifyDataSetChanged();
         });
 
+
 //        runOnUiThread(() -> {
 //                    TextView textView = new TextView(this);
 //                    ImageView imageView = new ImageView(this);
