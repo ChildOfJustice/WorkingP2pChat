@@ -103,8 +103,17 @@ public class MainActivity extends AppCompatActivity {
         String AnotherPort = arguments.get("AnotherPort").toString();
 
         networkManager = new NetworkManager(this);
-
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         startServer(YouPort);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         connect(AnotherIP, AnotherPort);
 
 
