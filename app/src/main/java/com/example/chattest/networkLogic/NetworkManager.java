@@ -88,7 +88,15 @@ public class NetworkManager implements Serializable{
                 e.printStackTrace();
                 Log.d(Constants.TAG, "Can't connect to server. Check the IP address and Port number and try again: " + e);
             } catch (Exception e) {
-                Log.d(Constants.TAG, "ERROR: " + e);
+                Log.d(Constants.TAG, "ERROR: " + e); //watch for this ERROR!!!
+                e.printStackTrace();
+                try {
+                    socket = new Socket("localhost", port);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+                sendingQueue = new SendingQueue(socket, core);
+//                core.showToast("Connected to other device. You can now exchange messages.");
             }
         }
     }
