@@ -10,11 +10,12 @@ import com.example.chattest.utils.Constants;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class Receiver extends Thread {
+public class Receiver extends Thread implements Serializable {
 
     public static final int bufferSize = 16238460;
 
