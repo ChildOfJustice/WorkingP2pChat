@@ -4,34 +4,25 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.chattest.networkLogic.NetworkManager;
+import com.example.chattest.networkLogic.ClientClass;
+import com.example.chattest.networkLogic.ServerClass;
 import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
-import com.example.chattest.utils.Utils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,52 +35,11 @@ public class MainActivity extends AppCompatActivity {
     ByteArrayOutputStream byteArrayOutputStream;
     boolean startedFileReceiving = false;
 
-    NetworkManager networkManager;
-
     List<Protocol> protocols;
 
-    private void ShowButtons(){
-        FloatingActionButton fab1 =  findViewById(R.id.fab_1);
-        FloatingActionButton fab2 =  findViewById(R.id.fab_2);
-        FloatingActionButton fab3 =  findViewById(R.id.fab_3);
-        @SuppressLint("ResourceType") Animation show_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab1_chow);
-        @SuppressLint("ResourceType") Animation show_fab_2 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab2_show);
-        @SuppressLint("ResourceType") Animation show_fab_3 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab3_show);
-        StartAnimationShow(fab1, show_fab_1);
-        StartAnimationShow(fab2, show_fab_2);
-        StartAnimationShow(fab3, show_fab_3);
-    }
+    ServerClass serverObject;
+    ClientClass clientObject;
 
-    private void HideButtons(){
-        FloatingActionButton fab1 =  findViewById(R.id.fab_1);
-        FloatingActionButton fab2 =  findViewById(R.id.fab_2);
-        FloatingActionButton fab3 =  findViewById(R.id.fab_3);
-        @SuppressLint("ResourceType") Animation hide_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab1_hide);
-        @SuppressLint("ResourceType") Animation hide_fab_2 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab2_hide);
-        @SuppressLint("ResourceType") Animation hide_fab_3 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab3_hide);
-        StartAnimationHide(fab1, hide_fab_1);
-        StartAnimationHide(fab2, hide_fab_2);
-        StartAnimationHide(fab3, hide_fab_3);
-    }
-
-    private void StartAnimationShow(FloatingActionButton fab, Animation show_fab){
-
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab.getLayoutParams();
-        layoutParams.rightMargin += (int) (fab.getWidth() * 1.7);
-        layoutParams.bottomMargin += (int) (fab.getHeight() * 0.25);
-        fab.setLayoutParams(layoutParams);
-        fab.startAnimation(show_fab);
-        fab.setClickable(true);
-    }
-
-    private void StartAnimationHide(FloatingActionButton fab, Animation hide_fab) {
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab.getLayoutParams();
-        layoutParams.rightMargin -= (int) (fab.getWidth() * 1.7);
-        layoutParams.bottomMargin -= (int) (fab.getHeight() * 0.25);
-        fab.setLayoutParams(layoutParams);
-        fab.startAnimation(hide_fab);
-        fab.setClickable(false);
-    }
 
 
     @Override
@@ -98,7 +48,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         FloatingActionButton fab =  findViewById(R.id.fab);
         Bundle arguments = getIntent().getExtras();
-//        networkManager = (NetworkManager) getIntent().getSerializableExtra("NetworkManager");
+
+//        serverObject = (ServerClass)getIntent().getSerializableExtra("Server");
+//        Log.d(Constants.TAG, "Got the ServerClass object: " + serverObject.toString());
 
 
 
@@ -106,19 +58,12 @@ public class MainActivity extends AppCompatActivity {
         String YouPort = arguments.get("YouPort").toString();
         String AnotherPort = arguments.get("AnotherPort").toString();
 
-        networkManager = new NetworkManager(this);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        startServer(YouPort);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        connect(AnotherIP, AnotherPort);
+
+
+        startServer(AnotherPort);
+
+        clientObject = new ClientClass(AnotherIP, Integer.parseInt(AnotherPort), this);
+        clientObject.start();
 
 
         //byte[] key = (byte[]) arguments.get("KeyValue");
@@ -148,6 +93,25 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void startServer(String port){
+
+        // if there's a valid input then create a server class on that port so that the client can take data from that port
+
+        try {
+            serverObject = new ServerClass(Integer.parseInt(port), this);
+            serverObject.start();
+            Log.e(Constants.TAG, "Server started");
+            Toast.makeText(this, "Server started", Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            Log.e(Constants.TAG, e.getMessage());
+            Toast.makeText(this, "Can't start server, please check the port number first", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+    }
+
+
+
     //Отправка сообщения
     public void SendMessage(View view) {
         //editTextMessage.getText().toString();
@@ -163,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
             ourMsgProtocol.setCurrentTime();
             ourMsgProtocol.setData(msg.getBytes());
 
-            networkManager.sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
+            clientObject.sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
 
             editTextMessage.setText("");
         }
@@ -177,20 +141,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-
-    private void startServer(String port){
-        networkManager.createServerThread(port);
-        networkManager.serverClass.start();
-        Toast.makeText(this, "Server started", Toast.LENGTH_SHORT).show();
-    }
-    private void connect(String ip, String port){
-        networkManager.createClientThread(ip, port);
-        networkManager.clientClass.start();
-
-        Toast.makeText(this, "your sending port and listening port has been set successfully", Toast.LENGTH_SHORT).show();
-    }
 
 
 
@@ -487,6 +437,51 @@ public class MainActivity extends AppCompatActivity {
 //
 //                }
 //        );
+    }
+
+
+
+    private void ShowButtons(){
+        FloatingActionButton fab1 =  findViewById(R.id.fab_1);
+        FloatingActionButton fab2 =  findViewById(R.id.fab_2);
+        FloatingActionButton fab3 =  findViewById(R.id.fab_3);
+        @SuppressLint("ResourceType") Animation show_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab1_chow);
+        @SuppressLint("ResourceType") Animation show_fab_2 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab2_show);
+        @SuppressLint("ResourceType") Animation show_fab_3 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab3_show);
+        StartAnimationShow(fab1, show_fab_1);
+        StartAnimationShow(fab2, show_fab_2);
+        StartAnimationShow(fab3, show_fab_3);
+    }
+
+    private void HideButtons(){
+        FloatingActionButton fab1 =  findViewById(R.id.fab_1);
+        FloatingActionButton fab2 =  findViewById(R.id.fab_2);
+        FloatingActionButton fab3 =  findViewById(R.id.fab_3);
+        @SuppressLint("ResourceType") Animation hide_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab1_hide);
+        @SuppressLint("ResourceType") Animation hide_fab_2 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab2_hide);
+        @SuppressLint("ResourceType") Animation hide_fab_3 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab3_hide);
+        StartAnimationHide(fab1, hide_fab_1);
+        StartAnimationHide(fab2, hide_fab_2);
+        StartAnimationHide(fab3, hide_fab_3);
+    }
+
+    private void StartAnimationShow(FloatingActionButton fab, Animation show_fab){
+
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab.getLayoutParams();
+        layoutParams.rightMargin += (int) (fab.getWidth() * 1.7);
+        layoutParams.bottomMargin += (int) (fab.getHeight() * 0.25);
+        fab.setLayoutParams(layoutParams);
+        fab.startAnimation(show_fab);
+        fab.setClickable(true);
+    }
+
+    private void StartAnimationHide(FloatingActionButton fab, Animation hide_fab) {
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab.getLayoutParams();
+        layoutParams.rightMargin -= (int) (fab.getWidth() * 1.7);
+        layoutParams.bottomMargin -= (int) (fab.getHeight() * 0.25);
+        fab.setLayoutParams(layoutParams);
+        fab.startAnimation(hide_fab);
+        fab.setClickable(false);
     }
 
 }
