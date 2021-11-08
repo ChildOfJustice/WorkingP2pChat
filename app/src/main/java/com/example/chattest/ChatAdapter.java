@@ -30,6 +30,10 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
         this.protocols = protocols; //Хранит лист сообщений
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        return protocols.get(position).isFromThisDevice() ? 1 : 0;
+    }
 
     //Сделал разметку для чата и устанавливаю его как стандарт для "заполнителя" RecyclerView т.к. Adapter заполняет его
     @NonNull
@@ -45,7 +49,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
     public void onBindViewHolder(@NonNull @NotNull ChatAdapter.ViewHolder holder, int position) {
         Protocol protocol = protocols.get(position);
 
-        if(protocol.isFromThisDevice()) {
+        if(getItemViewType(position) == 1) {
             holder.textViewYou.setText(new String(protocol.getData()));
             holder.textViewYouTime.setText(protocol.getTime());
             //if(protocol.getMsgCode() == 3) holder.viewYou.setImageBitmap(Bitmap bmp);

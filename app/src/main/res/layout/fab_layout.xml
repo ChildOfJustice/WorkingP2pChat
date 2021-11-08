@@ -10,6 +10,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+
+
         android:src="@android:drawable/ic_menu_compass"
         android:visibility="invisible"
         app:backgroundTint="@color/purple_200"
@@ -32,9 +34,11 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+
         android:src="@android:drawable/ic_menu_share"
         android:visibility="invisible"
         app:backgroundTint="@color/purple_200"
+
         app:fabSize="mini" />
 
 </FrameLayout>
