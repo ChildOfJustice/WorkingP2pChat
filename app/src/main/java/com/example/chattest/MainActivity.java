@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     ClientClass clientObject;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
 
 //        serverObject = (ServerClass)getIntent().getSerializableExtra("Server");
 //        Log.d(Constants.TAG, "Got the ServerClass object: " + serverObject.toString());
+
+
 
         String AnotherIP = arguments.get("AnotherIP").toString();
         String YouPort = arguments.get("YouPort").toString();
@@ -140,11 +144,16 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
     public void addProtocolNode(Protocol messageProtocol) {
         Log.d(Constants.TAG, "got protocol node with code: " + messageProtocol.getMsgCode());
         runOnUiThread(() -> {
             protocols.add(messageProtocol);
-            adapter.notifyDataSetChanged();
+            //adapter.notifyDataSetChanged();
+            //adapter.notifyItemInserted(protocols.size());
+            adapter = new ChatAdapter(this, protocols);
+            recyclerView.setAdapter(adapter);
         });
 
 
