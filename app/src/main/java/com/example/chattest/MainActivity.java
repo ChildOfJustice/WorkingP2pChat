@@ -13,6 +13,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
@@ -90,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         fab.setClickable(false);
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
         FloatingActionButton fab =  findViewById(R.id.fab);
         Bundle arguments = getIntent().getExtras();
 //        networkManager = (NetworkManager) getIntent().getSerializableExtra("NetworkManager");
+
+
 
         String AnotherIP = arguments.get("AnotherIP").toString();
         String YouPort = arguments.get("YouPort").toString();
@@ -175,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
     private void startServer(String port){
         networkManager.createServerThread(port);
         networkManager.serverClass.start();
@@ -195,7 +200,10 @@ public class MainActivity extends AppCompatActivity {
         Log.d(Constants.TAG, "got protocol node with code: " + messageProtocol.getMsgCode());
         runOnUiThread(() -> {
             protocols.add(messageProtocol);
-            adapter.notifyDataSetChanged();
+            //adapter.notifyDataSetChanged();
+            //adapter.notifyItemInserted(protocols.size());
+            adapter = new ChatAdapter(this, protocols);
+            recyclerView.setAdapter(adapter);
         });
 
 
