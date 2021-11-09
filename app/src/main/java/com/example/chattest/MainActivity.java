@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -94,7 +95,10 @@ public class MainActivity extends AppCompatActivity {
         fab3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(v.getContext(), "Верхняя кнопка", Toast.LENGTH_SHORT).show();
+                // creating new gallery intent for selecting text file only
+                Intent intent = new Intent().setType("text/plain").setAction(Intent.ACTION_GET_CONTENT);
+                // called a override method for starting gallery intent
+                startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), 123);
             }
         });
 
