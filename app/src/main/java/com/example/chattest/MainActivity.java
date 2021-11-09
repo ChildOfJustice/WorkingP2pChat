@@ -24,6 +24,9 @@ import com.example.chattest.utils.Utils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.ByteArrayOutputStream;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -509,6 +512,46 @@ public class MainActivity extends AppCompatActivity {
         fab3.setLayoutParams(layoutParams3);
         fab3.startAnimation(hide_fab3);
         fab3.setClickable(false);
+    }
+
+
+    private void RSA(){
+        Key publicKey = null;
+        Key privateKey = null;
+        // Generate key pair for 1024-bit RSA encryption and decryption
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(1024);
+            KeyPair kp = kpg.genKeyPair();
+            publicKey = kp.getPublic();
+            privateKey = kp.getPrivate();
+        } catch (Exception e) {
+            Log.e("Crypto", "RSA key pair error");
+        }
+
+        // Encode the original data with RSA private key
+        /*byte[] encodedBytes = null;
+        try {
+            Cipher c = Cipher.getInstance("RSA");
+            c.init(Cipher.ENCRYPT_MODE, privateKey);
+            encodedBytes = c.doFinal(testText.getBytes());
+        } catch (Exception e) {
+            Log.e("Crypto", "RSA encryption error");
+        }
+        TextView encodedTextView = (TextView)findViewById(R.id.textViewEncoded);
+        encodedTextView.setText("[ENCODED]:\n" +
+                Base64.encodeToString(encodedBytes, Base64.DEFAULT) + "\n");
+
+        // Decode the encoded data with RSA public key
+        byte[] decodedBytes = null;
+        try {
+            Cipher c = Cipher.getInstance("RSA");
+            c.init(Cipher.DECRYPT_MODE, publicKey);
+            decodedBytes = c.doFinal(encodedBytes);
+        } catch (Exception e) {
+            Log.e("Crypto", "RSA decryption error");
+        }*/
+
     }
 
 }
