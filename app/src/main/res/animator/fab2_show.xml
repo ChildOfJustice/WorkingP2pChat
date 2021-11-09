@@ -16,11 +16,11 @@
     <!--Move-->
     <translate
         android:duration="1000"
-        android:fromXDelta="170%"
-        android:fromYDelta="25%"
+        android:fromXDelta="150%"
+        android:fromYDelta="150%"
         android:interpolator="@android:anim/linear_interpolator"
-        android:toXDelta="50%"
-        android:toYDelta="-100%" />
+        android:toXDelta="0%"
+        android:toYDelta="0%" />
 
     <!--Fade In-->
     <alpha
