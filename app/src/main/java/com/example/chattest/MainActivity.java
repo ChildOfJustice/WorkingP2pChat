@@ -4,11 +4,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
@@ -19,10 +20,12 @@ import com.example.chattest.networkLogic.ClientClass;
 import com.example.chattest.networkLogic.ServerClass;
 import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
+import com.example.chattest.sendFile.FileSender;
 import com.example.chattest.utils.Constants;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,14 +35,17 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     ChatAdapter adapter;
 
-    ByteArrayOutputStream byteArrayOutputStream;
+    ByteArrayOutputStream byteArrayBufferFileYours;
+    ByteArrayOutputStream byteArrayBufferFileTheir;
     boolean startedFileReceiving = false;
+    boolean startedFileSending = false;
 
     List<Protocol> protocols;
 
     ServerClass serverObject;
     ClientClass clientObject;
 
+    FileSender fileSender;
 
 
     @Override
@@ -62,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
 
         startServer(AnotherPort);
 
+        fileSender = new FileSender(this);
+
         clientObject = new ClientClass(AnotherIP, Integer.parseInt(AnotherPort), this);
         clientObject.start();
 
@@ -82,16 +90,35 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!checkFabs){
-                    ShowButtons();
-                    checkFabs = true;
+                    //ShowButtons();
+//                    checkFabs = true;
+                    // creating new gallery intent for selecting text file only
+                    Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
+                    // called a override method for starting gallery intent
+                    startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), FileSender.openFileRequestCode);
                 }
                 else {
-                    HideButtons();
-                    checkFabs = false;
+//                    HideButtons();
+//                    checkFabs = false;
                 }
             }
         });
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        // if this is a gallery opening request
+        if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
+            Uri uri = intent.getData();
+            fileSender.sendFile(uri, clientObject.sendingQueue);
+        }
+    }
+
+
+
+
 
     private void startServer(String port){
 
@@ -149,294 +176,191 @@ public class MainActivity extends AppCompatActivity {
     public void addProtocolNode(Protocol messageProtocol) {
         Log.d(Constants.TAG, "got protocol node with code: " + messageProtocol.getMsgCode());
         runOnUiThread(() -> {
-            protocols.add(messageProtocol);
-            //adapter.notifyDataSetChanged();
-            //adapter.notifyItemInserted(protocols.size());
-            adapter = new ChatAdapter(this, protocols);
-            recyclerView.setAdapter(adapter);
+            switch (messageProtocol.getMsgCode()){
+                case MsgCodes.fileStartCode:
+                    Log.d(Constants.TAG, "Got a file sending start request, file size is: " + new String(messageProtocol.getData()));
+
+                    if(messageProtocol.isFromThisDevice()) {
+                        byteArrayBufferFileYours = new ByteArrayOutputStream();
+                        startedFileSending = true;
+                    } else {
+                        byteArrayBufferFileTheir = new ByteArrayOutputStream();
+                        startedFileReceiving = true;
+                    }
+                    break;
+
+                case MsgCodes.fileCode:
+                    Log.d(Constants.TAG, "Receiving a file: " + messageProtocol.getData().length);
+
+                    if(messageProtocol.isFromThisDevice() && startedFileSending) {
+                        try {
+                            byteArrayBufferFileYours.write(messageProtocol.getData());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if(!messageProtocol.isFromThisDevice() && startedFileReceiving) {
+                        try {
+                            byteArrayBufferFileTheir.write(messageProtocol.getData());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    break;
+
+                case MsgCodes.fileEndCode:
+                    Log.d(Constants.TAG, "Received the file! file size is: " + new String(messageProtocol.getData()));
+
+                    if(messageProtocol.isFromThisDevice()) {
+                        byte[] imgBytes = byteArrayBufferFileYours.toByteArray();
+                        Log.d(Constants.TAG, "You sent an Img with size: " + imgBytes.length);
+    //                    Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+    //                    imageView.setImageBitmap(bmp);
+
+                        Protocol fullImageProtocol = new Protocol();
+                        fullImageProtocol.setFromThisDevice(true);
+                        fullImageProtocol.setData(imgBytes);
+                        fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
+                        protocols.add(fullImageProtocol);
+                        adapter = new ChatAdapter(this, protocols);
+                        recyclerView.setAdapter(adapter);
+
+                        startedFileSending = false;
+                    } else {
+                        byte[] imgBytes = byteArrayBufferFileTheir.toByteArray();
+                        Log.d(Constants.TAG, "You received an Img with size: " + imgBytes.length);
+                        //                    Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+                        //                    imageView.setImageBitmap(bmp);
+
+                        Protocol fullImageProtocol = new Protocol();
+                        fullImageProtocol.setFromThisDevice(false);
+                        fullImageProtocol.setData(imgBytes);
+                        fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
+                        protocols.add(fullImageProtocol);
+                        adapter = new ChatAdapter(this, protocols);
+                        recyclerView.setAdapter(adapter);
+
+                        startedFileReceiving = false;
+                    }
+                    break;
+                case MsgCodes.disconnectCode:
+//                    textView.setPadding(0, 0, 0, 0);
+//
+//                    textView.setTextSize(13);
+//                    conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+//                    textView.setGravity(Gravity.CENTER);
+//                    textView.setText("Your Pair has been disconnected.");
+
+                    //TODO close everything and return to the main page (or not???)
+//                    disconnectHim();
+                    break;
+                case MsgCodes.textCode:
+                    Log.d(Constants.TAG, "got an ordinary msg: " + new String(messageProtocol.getData()));
+
+                    protocols.add(messageProtocol);
+                    //adapter.notifyDataSetChanged();
+                    //adapter.notifyItemInserted(protocols.size());
+                    adapter = new ChatAdapter(this, protocols);
+                    recyclerView.setAdapter(adapter);
+//
+//                    textView.setTextSize(20);
+//                    textView.setText(new String(messageProtocol.getData())); // setting message on the message textview
+//
+//                    msgTime.setText("(" + Utils.getTime(false) + ")"); // setting messing time
+//
+//                    // creating divider between two messages
+//                    addDividerBetweenTwoMessages();
+//
+//                    // adding 2 more views in linear layout every time
+//                    conversationLayout.addView(textView);
+//                    conversationLayout.addView(msgTime);
+//                    conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN)); // for getting last message in first
+                    break;
+            }
         });
-
-
-//        runOnUiThread(() -> {
-//                    TextView textView = new TextView(this);
-//                    ImageView imageView = new ImageView(this);
-//                    TextView msgTime = new TextView(this);
 //
-//                    // if it's a sender message
-//                    if (color == Color.parseColor("#FCE4EC")) {
-//                        Log.d(Constants.TAG, "Your sent msg: " + new String(messageProtocol.getData()));
 //
-//                        //UI part of YOUR new msg
-//                        {
-//                            textView.setPadding(200, 20, 10, 10);
-//                            //textView.setMaxLines(5);
-//                            textView.setGravity(Gravity.RIGHT);
-////                            textView.setBackgroundResource(R.drawable.sender_messages_layout);
-//                            textView.setTextIsSelectable(true);
+//        switch (messageProtocol.getMsgCode()){
+//            case MsgCodes.fileStartCode:
+//                Log.d(Constants.TAG, "Got a file sending start request, file size is: " + new String(messageProtocol.getData()));
 //
-//                            LinearLayout.LayoutParams lp1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-//                            // lp1.setMargins(10, 10, 10, 10);
-//                            // lp1.setMargins(10, 10, 10, 10);
-//                            //lp1.width = 400;
-//                            lp1.leftMargin = 200;
-//                            //lp1.rightMargin = 50;
-//                            textView.setLayoutParams(lp1);
+//                byteArrayOutputStream = new ByteArrayOutputStream();
+//                startedFileReceiving = true;
+//                break;
 //
-//                            msgTime.setPadding(0, 0, 0, 0);
+//            case MsgCodes.fileCode:
+//                Log.d(Constants.TAG, "Receiving a file: " + messageProtocol.getData().length);
 //
-//                            msgTime.setTextSize(14);
-//                            msgTime.setTextColor(Color.parseColor("#FCE4EC"));
-//                            msgTime.setTypeface(textView.getTypeface(), Typeface.ITALIC);
-////                            conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-//                            msgTime.setGravity(Gravity.LEFT);
-//
-//                            LinearLayout.LayoutParams lp4 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-//                            // lp1.setMargins(10, 10, 10, 10);
-//                            // lp1.setMargins(10, 10, 10, 10);
-//                            //lp1.width = 400;
-//                            lp4.leftMargin = 200;
-//                            msgTime.setLayoutParams(lp4);
-//                        }
-//                        //textView.setBackgroundResource(R.drawable.sender_messages_layout);
+//                if(startedFileReceiving){
+//                    try {
+//                        byteArrayOutputStream.write(messageProtocol.getData());
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
 //                    }
-//                    // else if receiver message
-////                    else if(!(caesarCipherDecryption(message, shift).contains("bg@%@bg"))
-////                            && !(caesarCipherDecryption(message, shift).contains("diconnect@%@d"))
-////                            && !(caesarCipherDecryption(message, shift).contains("file@%@"))
-////                            && !(caesarCipherDecryption(message, shift).contains("remove@%@")))
-//                    // else if it is incoming message
-//                    else {
-//                        Log.d(Constants.TAG, "Got a msg: " + new String(messageProtocol.getData()));
-//
-//                        //UI part of a new incoming msg
-//                        {
-//                            textView.setPadding(10, 20, 200, 10);
-//                            //textView.setMaxLines(5);
-//                            textView.setGravity(Gravity.LEFT);
-////                            textView.setBackgroundResource(R.drawable.receiver_messages_layout);
-//                            textView.setTextIsSelectable(true);
-//
-//                            LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-//                            //lp1.setMargins(10, 10, 10, 10);
-//                            //lp1.width = 400;
-//                            //lp1.leftMargin = 150;
-//                            lp2.rightMargin = 200;
-//                            textView.setLayoutParams(lp2);
-//
-//                            msgTime.setTextSize(14);
-//                            msgTime.setTextColor(Color.parseColor("#FFFFFF"));
-//                            msgTime.setTypeface(textView.getTypeface(), Typeface.ITALIC);
-////                            conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-//                            LinearLayout.LayoutParams lp3 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-//                            //lp1.setMargins(10, 10, 10, 10);
-//                            //lp1.width = 400;
-//                            //lp1.leftMargin = 150;
-//                            lp3.rightMargin = 200;
-//                            msgTime.setGravity(Gravity.RIGHT);
-//                            msgTime.setLayoutParams(lp3);
-//                        }
-//                    }
-//
-//
-//                    //UI part of a new msg
-//                    {
-//                        textView.setTextColor(color);
-//                    }
-////                    Log.d(Constants.TAG, "encrypted msg: " + message);
-////                    String actualMessage = caesarCipherDecryption(message, shift);
-////                    Log.d(Constants.TAG, "decrypted msg: " + actualMessage);
-//
-//
-////                    String[] messages = actualMessage.split("@%@", 0);
-//
-//                    switch (messageProtocol.getMsgCode()){
-//                        case MsgCodes.fileStartCode:
-//                            Log.d(Constants.TAG, "Got a file sending start request, file size is: " + new String(messageProtocol.getData()));
-//
-//                            byteArrayOutputStream = new ByteArrayOutputStream();
-//                            startedFileReceiving = true;
-//                            break;
-//                        case MsgCodes.fileCode:
-//                            Log.d(Constants.TAG, "Receiving a file: " + messageProtocol.getData().length);
-//
-//
-//                            if(startedFileReceiving){
-//                                try {
-//                                    byteArrayOutputStream.write(messageProtocol.getData());
-//                                } catch (IOException e) {
-//                                    e.printStackTrace();
-//                                }
-//                            }
-////                            textView.setTextSize(20);
-////                            textView.setText(new String(messageProtocol.getData())); // setting message on the message textview
-////
-////                            msgTime.setText("(" + Utils.getTime(false) + ")"); // setting messing time
-//                            break;
-//                        case MsgCodes.fileEndCode:
-//                            Log.d(Constants.TAG, "Received the file! file size is: " + new String(messageProtocol.getData()));
-//                            textView.setPadding(0,0,0,0);
-//                            textView.setTextSize(15);
-//                            textView.setTypeface(textView.getTypeface(), Typeface.BOLD);
-////                            conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-//                            textView.setGravity(Gravity.CENTER);
-////                            conversationLayout.addView(imageView);
-//
-//                            byte[] imgBytes = byteArrayOutputStream.toByteArray();
-//                            Log.d(Constants.TAG, "Img size is: " + imgBytes.length);
-//                            Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
-//                            imageView.setImageBitmap(bmp);
-//                            startedFileReceiving = false;
-//
-//
-////                            Log.d(Constants.TAG, "File Name: "+messages[1]);
-//
-////                            if(color == Color.parseColor("#FCE4EC"))
-////                                textView.setText(messages[1]+" has been sent");
-////                            else{
-////                                textView.setText(messages[1]+" has been received and downloaded on android/data/com.example.p2p/");
-////                                //writeToFile(messages[2], false, messages[1]);
-////                            }
-//
-//
-//
-//
-//                            break;
-//                        case MsgCodes.disconnectCode:
-//                            textView.setPadding(0, 0, 0, 0);
-//
-//                            textView.setTextSize(13);
-////                            conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-//                            textView.setGravity(Gravity.CENTER);
-//                            textView.setText("Your Pair has been disconnected.");
-//
-//                            //TODO close everything and return to the main page (or not???)
-////                            disconnectHim();
-//                            break;
-//                        case MsgCodes.textCode:
-//                            Log.d(Constants.TAG, "got an ordinary msg: " + new String(messageProtocol.getData()));
-//
-//                            textView.setTextSize(20);
-//                            textView.setText(new String(messageProtocol.getData())); // setting message on the message textview
-//
-//                            msgTime.setText("(" + Utils.getTime(false) + ")"); // setting messing time
-//
-//                            // creating divider between two messages
-//                            //TODO
-////                            addDividerBetweenTwoMessages();
-//
-//                            // adding 2 more views in linear layout every time
-//                            //TODO
-////                            conversationLayout.addView(textView);
-////                            conversationLayout.addView(msgTime);
-////                            conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN)); // for getting last message in first
-//                            break;
-//                    }
-//                    // if its a file
-////                    if (messageProtocol.getMsgCode() == MsgCodes.fileCode) {
-////                        textView.setPadding(0,0,0,0);
-////
-////                        textView.setTextSize(15);
-////                        textView.setTypeface(textView.getTypeface(), Typeface.BOLD);
-////                        conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-////                        textView.setGravity(Gravity.CENTER);
-////                        conversationLayout.addView(imageView);
-////                        Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-////                        imageView.setImageBitmap(bmp);
-////                        Log.d(Constants.TAG, "File Name: "+messages[1]);
-////
-////                        if(color == Color.parseColor("#FCE4EC"))
-////                            textView.setText(messages[1]+" has been sent");
-////                        else{
-////                            textView.setText(messages[1]+" has been received and downloaded on android/data/com.example.p2p/");
-////                            //writeToFile(messages[2], false, messages[1]);
-////                        }
-//
-////                    }
-//                    // if its a remove message
-////                    else if (messages[0].equals("remove")) {
-////                        textView.setPadding(0, 0, 0, 0);
-////
-////                        textView.setTextSize(15);
-////                        textView.setTypeface(textView.getTypeface(), Typeface.BOLD);
-////                        conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-////                        textView.setGravity(Gravity.CENTER);
-////                        removeAllChatForHim();
-////
-////                        if (color == Color.parseColor("#FCE4EC"))
-////                            textView.setText("You have removed all the previous message");
-////                        else {
-////                            textView.setText("Your pair has removed all the previous message");
-////                        }
-////
-////                    }
-//                    // if its a bg change message
-////                    else if (actualMessage.contains("bg@%@bg")) {
-////                        changeBGforHim(actualMessage);
-////                        textView.setPadding(0, 0, 0, 0);
-////
-////                        textView.setTextSize(13);
-////                        textView.setTextSize(15);
-////                        textView.setTypeface(textView.getTypeface(), Typeface.BOLD);
-////                        conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-////                        textView.setGravity(Gravity.CENTER);
-////                        if (actualMessage.equals("bg@%@bg0")) {
-////                            textView.setText("Background reset to default");
-////                        } else
-////                            textView.setText("Background has been changed");
-////
-////                    }
-//                    // if its a disconnect message
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-////                    else if (messageProtocol.getMsgCode() == MsgCodes.disconnectCode) {
-////                        textView.setPadding(0, 0, 0, 0);
-////
-////                        textView.setTextSize(13);
-////                        conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-////                        textView.setGravity(Gravity.CENTER);
-////                        textView.setText("Your Pair has been disconnected.");
-////
-////                        //TODO close everything and return to the main page (or not???)
-////                        disconnectHim();
-////                    }
-//                    // else it's a normal message
-////                    else if(messageProtocol.getMsgCode() == MsgCodes.textCode){
-////                        Log.d(Constants.TAG, "got an ordinary msg: " + messageProtocol.getMessage());
-////
-////                        textView.setTextSize(20);
-////                        textView.setText(messageProtocol.getMessage()); // setting message on the message textview
-////
-////                        msgTime.setText("(" + Utils.getTime(false) + ")"); // setting messing time
-////                    }
-//
-//
-//
 //                }
-//        );
+//                break;
+//
+//            case MsgCodes.fileEndCode:
+//                Log.d(Constants.TAG, "Received the file! file size is: " + new String(messageProtocol.getData()));
+//
+//                byte[] imgBytes = byteArrayOutputStream.toByteArray();
+//                Log.d(Constants.TAG, "Img size is: " + imgBytes.length);
+////                    Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+////                    imageView.setImageBitmap(bmp);
+//
+//                Protocol fullImageProtocol = new Protocol();
+//                fullImageProtocol.setFromThisDevice(false);
+//                fullImageProtocol.setData(imgBytes);
+//                fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
+//                protocols.add(fullImageProtocol);
+//
+//                runOnUiThread(() -> {
+//                    adapter = new ChatAdapter(this, protocols);
+//                    recyclerView.setAdapter(adapter);
+//                });
+//
+//
+//
+//                startedFileReceiving = false;
+//
+//                break;
+//            case MsgCodes.disconnectCode:
+////                    textView.setPadding(0, 0, 0, 0);
+////
+////                    textView.setTextSize(13);
+////                    conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
+////                    textView.setGravity(Gravity.CENTER);
+////                    textView.setText("Your Pair has been disconnected.");
+//
+//                //TODO close everything and return to the main page (or not???)
+////                    disconnectHim();
+//                break;
+//            case MsgCodes.textCode:
+//                Log.d(Constants.TAG, "got an ordinary msg: " + new String(messageProtocol.getData()));
+//
+//                protocols.add(messageProtocol);
+//                //adapter.notifyDataSetChanged();
+//                //adapter.notifyItemInserted(protocols.size());
+//                runOnUiThread(() -> {
+//                    adapter = new ChatAdapter(this, protocols);
+//                    recyclerView.setAdapter(adapter);
+//                });
+//
+////
+////                    textView.setTextSize(20);
+////                    textView.setText(new String(messageProtocol.getData())); // setting message on the message textview
+////
+////                    msgTime.setText("(" + Utils.getTime(false) + ")"); // setting messing time
+////
+////                    // creating divider between two messages
+////                    addDividerBetweenTwoMessages();
+////
+////                    // adding 2 more views in linear layout every time
+////                    conversationLayout.addView(textView);
+////                    conversationLayout.addView(msgTime);
+////                    conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN)); // for getting last message in first
+//                break;
+//        }
     }
 
 
