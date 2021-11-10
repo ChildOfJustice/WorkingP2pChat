@@ -1,6 +1,8 @@
 package com.example.chattest;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 
 import org.jetbrains.annotations.NotNull;
@@ -50,13 +53,21 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
         Protocol protocol = protocols.get(position);
 
         if(getItemViewType(position) == 1) {
-            holder.textViewYou.setText(new String(protocol.getData()));
-            holder.textViewYouTime.setText(protocol.getTime());
-            //if(protocol.getMsgCode() == 3) holder.viewYou.setImageBitmap(Bitmap bmp);
+            if(protocol.getMsgCode() == MsgCodes.fileEndCode) {
+                Bitmap bmp = BitmapFactory.decodeByteArray(protocol.getData(), 0, protocol.getData().length);
+                holder.viewYou.setImageBitmap(bmp);
+            } else {
+                holder.textViewYou.setText(new String(protocol.getData()));
+                holder.textViewYouTime.setText(protocol.getTime());
+            }
         } else {
-            holder.textViewAnother.setText(new String(protocol.getData()));
-            holder.textViewAnotherTime.setText(protocol.getTime());
-            //if(protocol.getMsgCode() == 3) holder.viewYou.setImageBitmap(Bitmap bmp);
+            if(protocol.getMsgCode() == MsgCodes.fileEndCode) {
+                Bitmap bmp = BitmapFactory.decodeByteArray(protocol.getData(), 0, protocol.getData().length);
+                holder.viewAnother.setImageBitmap(bmp);
+            } else {
+                holder.textViewAnother.setText(new String(protocol.getData()));
+                holder.textViewAnotherTime.setText(protocol.getTime());
+            }
         }
     }
 

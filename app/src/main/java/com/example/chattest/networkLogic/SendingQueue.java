@@ -42,27 +42,28 @@ public class SendingQueue {
         }
     }
 
-    public void send(Protocol data) {
+    public void send(Protocol protocol) {
         Runnable task = () -> {
             try {
 
-                //Log.d(Constants.TAG, "Sending msg: " + new String(data.getData()));
+                Log.d(Constants.TAG, "Sending a node, size is: " + protocol.getData().length);
 
-                byte[] serializedData = data.serialize();
-                if(serializedData == null){
-                    Log.d(Constants.TAG, "Protocol node !serialization! FAILED!");
+                byte[] serialized = protocol.serialize();
+                if(serialized == null){
+                    Log.e(Constants.TAG, "Protocol node !serialization! FAILED!");
                 } else {
-                    writeToSocketStreamSync(serializedData);
-                    //Log.d(Constants.TAG, "msg size is: " + serializedData.length);
+                    writeToSocketStreamSync(serialized);
 
-                    data.setFromThisDevice(true);
+                    Log.d(Constants.TAG, "Sent a node, full serialized size is: " + serialized.length);
 
-                    core.addProtocolNode(data);
+                    protocol.setFromThisDevice(true);
+
+                    core.addProtocolNode(protocol);
                 }
             } catch (IOException e) {
-                Log.d(Constants.TAG, "Can't send message: " + e);
+                Log.e(Constants.TAG, "Can't send message: " + e);
             } catch (Exception e) {
-                Log.d(Constants.TAG, "Error: " + e);
+                Log.e(Constants.TAG, "Error: " + e);
             }
         };
 
@@ -70,24 +71,24 @@ public class SendingQueue {
     }
 
     //will send a piece of protocol without showing it on the sender screen
-    public void sendNode(Protocol data) {
-        Runnable task = () -> {
-            //Log.d(Constants.TAG, "Task has been started to send (pure, not protocol size): " + data.getData().length + " nsg code is: " + data.getMsgCode());
-            try {
-
-                byte[] serialized = data.serialize();
-                writeToSocketStreamSync(serialized);
-                //Log.d(Constants.TAG, "Sending a node, protocol size is: " + serialized.length);
-
-            } catch (IOException e) {
-                Log.d(Constants.TAG, "Can't send a node: " + e);
-            } catch (Exception e) {
-                Log.d(Constants.TAG, "Error: " + e);
-            }
-        };
-
-        threadPoolExecutor.execute(task);
-    }
+//    public void sendNode(Protocol protocol) {
+//        Runnable task = () -> {
+//            //Log.d(Constants.TAG, "Task has been started to send (pure, not protocol size): " + data.getData().length + " msg code is: " + data.getMsgCode());
+//            try {
+//                Log.d(Constants.TAG, "Sending a node, protocol data size is: " + protocol.getData().length);
+//                byte[] serialized = protocol.serialize();
+//                writeToSocketStreamSync(serialized);
+//                Log.d(Constants.TAG, "Sent a node, full serialized size is: " + serialized.length);
+//
+//            } catch (IOException e) {
+//                Log.e(Constants.TAG, "Can't send a node: " + e);
+//            } catch (Exception e) {
+//                Log.e(Constants.TAG, "Error: " + e);
+//            }
+//        };
+//
+//        threadPoolExecutor.execute(task);
+//    }
 
     public void dispose(){
         threadPoolExecutor.shutdown();

@@ -5,6 +5,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
+import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
 
@@ -55,7 +56,7 @@ public class Receiver extends Thread implements Serializable {
                 bytes = inputStream.read(buffer);
 
                 if (bytes > 0) {
-                    Log.d(Constants.TAG, "Received bytes: " + bytes);
+                    Log.d(Constants.TAG, "Received bytes from inputStream: " + bytes);
 
                     scheduleDeserializationTask(buffer, bytes);
                 }
@@ -74,12 +75,13 @@ public class Receiver extends Thread implements Serializable {
         Runnable task = () -> {
             Protocol protocol = Protocol.deserialize(data);
             if(protocol == null){
-                Log.d(Constants.TAG, "Protocol deserialization FAILED!!!: ");
+                Log.e(Constants.TAG, "Protocol deserialization FAILED!!!: ");
             } else {
-                Log.d(Constants.TAG, "Received a msg: " + new String(protocol.getData()));
+                Log.d(Constants.TAG, "Received a protocol node with size: " + protocol.getData().length);
+
                 protocol.setFromThisDevice(false);
 
-               core.addProtocolNode(protocol);
+                core.addProtocolNode(protocol);
 
                 //core.handler.obtainMessage(Constants.MESSAGE_READ, receivedBytes, -1, data).sendToTarget();
             }
