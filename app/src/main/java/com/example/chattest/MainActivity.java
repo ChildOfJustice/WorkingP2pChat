@@ -26,6 +26,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
     FileSender fileSender;
 
+    FloatingActionButton fab1, fab2, fab3;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +68,9 @@ public class MainActivity extends AppCompatActivity {
         String AnotherIP = arguments.get("AnotherIP").toString();
         String YouPort = arguments.get("YouPort").toString();
         String AnotherPort = arguments.get("AnotherPort").toString();
-
+        fab1 =  findViewById(R.id.fab_1);
+        fab2 =  findViewById(R.id.fab_2);
+        fab3 =  findViewById(R.id.fab_3);
 
 
         startServer(AnotherPort);
@@ -85,24 +92,48 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        //Обработчик нижней кнопки
+        fab1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(v.getContext(), "Нижняя кнопка", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        //Обработчик средней кнопки
+        fab2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(v.getContext(), "Средняя кнопка", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        //Обработчик верхняя кнопки
+        fab3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // creating new gallery intent for selecting text file only
+                Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
+                // called a override method for starting gallery intent
+                startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), FileSender.openFileRequestCode);
+            }
+        });
+
         //Анимация кнопки файла
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(!checkFabs){
-                    //ShowButtons();
-//                    checkFabs = true;
-                    // creating new gallery intent for selecting text file only
-                    Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
-                    // called a override method for starting gallery intent
-                    startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), FileSender.openFileRequestCode);
+                    ShowButtons();
+                    checkFabs = true;
                 }
                 else {
-//                    HideButtons();
-//                    checkFabs = false;
+                    HideButtons();
+                    checkFabs = false;
                 }
             }
         });
+
     }
 
     @Override
@@ -365,16 +396,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
     private void ShowButtons(){
-        FloatingActionButton fab1 =  findViewById(R.id.fab_1);
-        FloatingActionButton fab2 =  findViewById(R.id.fab_2);
-        FloatingActionButton fab3 =  findViewById(R.id.fab_3);
+
         @SuppressLint("ResourceType") Animation show_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab1_chow);
         @SuppressLint("ResourceType") Animation show_fab_2 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab2_show);
         @SuppressLint("ResourceType") Animation show_fab_3 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab3_show);
-        StartAnimationShow(fab1, show_fab_1);
-        StartAnimationShow(fab2, show_fab_2);
-        StartAnimationShow(fab3, show_fab_3);
+        StartAnimationShow(fab1, show_fab_1, fab2, show_fab_2, fab3, show_fab_3);
+
     }
 
     private void HideButtons(){
@@ -384,28 +413,101 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("ResourceType") Animation hide_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab1_hide);
         @SuppressLint("ResourceType") Animation hide_fab_2 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab2_hide);
         @SuppressLint("ResourceType") Animation hide_fab_3 = AnimationUtils.loadAnimation(getApplication(), R.animator.fab3_hide);
-        StartAnimationHide(fab1, hide_fab_1);
-        StartAnimationHide(fab2, hide_fab_2);
-        StartAnimationHide(fab3, hide_fab_3);
+        StartAnimationHide(fab1, hide_fab_1, fab2, hide_fab_2, fab3, hide_fab_3);
     }
 
-    private void StartAnimationShow(FloatingActionButton fab, Animation show_fab){
+    private void StartAnimationShow(FloatingActionButton fab1, Animation show_fab1, FloatingActionButton fab2,
+                                    Animation show_fab2, FloatingActionButton fab3, Animation show_fab3)
+    {
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab1.getLayoutParams();
+        layoutParams.rightMargin += (int) (fab1.getWidth() * 1.7);
+        layoutParams.bottomMargin += (int) (fab1.getHeight() * 0.25);
+        fab1.setLayoutParams(layoutParams);
+        fab1.startAnimation(show_fab1);
+        fab1.setClickable(true);
 
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab.getLayoutParams();
-        layoutParams.rightMargin += (int) (fab.getWidth() * 1.7);
-        layoutParams.bottomMargin += (int) (fab.getHeight() * 0.25);
-        fab.setLayoutParams(layoutParams);
-        fab.startAnimation(show_fab);
-        fab.setClickable(true);
+        FrameLayout.LayoutParams layoutParams2 = (FrameLayout.LayoutParams) fab2.getLayoutParams();
+        layoutParams2.rightMargin += (int) (fab2.getWidth() * 1.5);
+        layoutParams2.bottomMargin += (int) (fab2.getHeight() * 1.5);
+        fab2.setLayoutParams(layoutParams2);
+        fab2.startAnimation(show_fab2);
+        fab2.setClickable(true);
+
+        FrameLayout.LayoutParams layoutParams3 = (FrameLayout.LayoutParams) fab3.getLayoutParams();
+        layoutParams3.rightMargin += (int) (fab3.getWidth() * 0.25);
+        layoutParams3.bottomMargin += (int) (fab3.getHeight() * 1.7);
+        fab3.setLayoutParams(layoutParams3);
+        fab3.startAnimation(show_fab3);
+        fab3.setClickable(true);
     }
 
-    private void StartAnimationHide(FloatingActionButton fab, Animation hide_fab) {
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab.getLayoutParams();
-        layoutParams.rightMargin -= (int) (fab.getWidth() * 1.7);
-        layoutParams.bottomMargin -= (int) (fab.getHeight() * 0.25);
-        fab.setLayoutParams(layoutParams);
-        fab.startAnimation(hide_fab);
-        fab.setClickable(false);
+    private void StartAnimationHide(FloatingActionButton fab1, Animation hide_fab1, FloatingActionButton fab2,
+                                    Animation hide_fab2, FloatingActionButton fab3, Animation hide_fab3)
+    {
+        //Floating Action Button 1
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) fab1.getLayoutParams();
+        layoutParams.rightMargin -= (int) (fab1.getWidth() * 1.7);
+        layoutParams.bottomMargin -= (int) (fab1.getHeight() * 0.25);
+        fab1.setLayoutParams(layoutParams);
+        fab1.startAnimation(hide_fab1);
+        fab1.setClickable(false);
+
+        //Floating Action Button 2
+        FrameLayout.LayoutParams layoutParams2 = (FrameLayout.LayoutParams) fab2.getLayoutParams();
+        layoutParams2.rightMargin -= (int) (fab2.getWidth() * 1.5);
+        layoutParams2.bottomMargin -= (int) (fab2.getHeight() * 1.5);
+        fab2.setLayoutParams(layoutParams2);
+        fab2.startAnimation(hide_fab2);
+        fab2.setClickable(false);
+
+        //Floating Action Button 3
+        FrameLayout.LayoutParams layoutParams3 = (FrameLayout.LayoutParams) fab3.getLayoutParams();
+        layoutParams3.rightMargin -= (int) (fab3.getWidth() * 0.25);
+        layoutParams3.bottomMargin -= (int) (fab3.getHeight() * 1.7);
+        fab3.setLayoutParams(layoutParams3);
+        fab3.startAnimation(hide_fab3);
+        fab3.setClickable(false);
     }
+
+
+    private void RSA(){
+        Key publicKey = null;
+        Key privateKey = null;
+        // Generate key pair for 1024-bit RSA encryption and decryption
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(1024);
+            KeyPair kp = kpg.genKeyPair();
+            publicKey = kp.getPublic();
+            privateKey = kp.getPrivate();
+        } catch (Exception e) {
+            Log.e("Crypto", "RSA key pair error");
+        }
+
+        // Encode the original data with RSA private key
+        /*byte[] encodedBytes = null;
+        try {
+            Cipher c = Cipher.getInstance("RSA");
+            c.init(Cipher.ENCRYPT_MODE, privateKey);
+            encodedBytes = c.doFinal(testText.getBytes());
+        } catch (Exception e) {
+            Log.e("Crypto", "RSA encryption error");
+        }
+        TextView encodedTextView = (TextView)findViewById(R.id.textViewEncoded);
+        encodedTextView.setText("[ENCODED]:\n" +
+                Base64.encodeToString(encodedBytes, Base64.DEFAULT) + "\n");
+
+        // Decode the encoded data with RSA public key
+        byte[] decodedBytes = null;
+        try {
+            Cipher c = Cipher.getInstance("RSA");
+            c.init(Cipher.DECRYPT_MODE, publicKey);
+            decodedBytes = c.doFinal(encodedBytes);
+        } catch (Exception e) {
+            Log.e("Crypto", "RSA decryption error");
+        }*/
+
+    }
+
 
 }
