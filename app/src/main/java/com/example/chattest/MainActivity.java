@@ -1,9 +1,12 @@
 package com.example.chattest;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,17 +40,18 @@ public class MainActivity extends AppCompatActivity {
     EditText editTextMessage;
     RecyclerView recyclerView;
     ChatAdapter adapter;
-
+    Uri uri;
     ByteArrayOutputStream byteArrayBufferFileYours;
     ByteArrayOutputStream byteArrayBufferFileTheir;
     boolean startedFileReceiving = false;
     boolean startedFileSending = false;
-
+    FragmentManager manager;
+    DialogFragment dialogBar;
     List<Protocol> protocols;
-
+    ProgressDialog progressDialog;
     ServerClass serverObject;
     ClientClass clientObject;
-
+    View mView;
     FileSender fileSender;
 
     FloatingActionButton fab1, fab2, fab3;
@@ -63,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 //        serverObject = (ServerClass)getIntent().getSerializableExtra("Server");
 //        Log.d(Constants.TAG, "Got the ServerClass object: " + serverObject.toString());
 
-
+        manager = getSupportFragmentManager();
 
         String AnotherIP = arguments.get("AnotherIP").toString();
         String YouPort = arguments.get("YouPort").toString();
@@ -71,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         fab1 =  findViewById(R.id.fab_1);
         fab2 =  findViewById(R.id.fab_2);
         fab3 =  findViewById(R.id.fab_3);
-
 
         startServer(AnotherPort);
 
@@ -96,7 +99,22 @@ public class MainActivity extends AppCompatActivity {
         fab1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(v.getContext(), "Нижняя кнопка", Toast.LENGTH_SHORT).show();
+                progressDialog = new ProgressDialog(MainActivity.this);
+                progressDialog.setMessage("Loading..."); // Setting Message
+                progressDialog.setTitle("ProgressDialog"); // Setting Title
+                progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
+                progressDialog.show(); // Display Progress Dialog
+                progressDialog.setCancelable(false);
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        progressDialog.dismiss();
+                    }
+                }).start();
             }
         });
 
@@ -112,10 +130,13 @@ public class MainActivity extends AppCompatActivity {
         fab3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // creating new gallery intent for selecting text file only
-                Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
-                // called a override method for starting gallery intent
-                startActivityForResult(Intent.createChooser(intent, "Select a TXT file"), FileSender.openFileRequestCode);
+
+                    // creating new gallery intent for selecting text file only
+                    Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
+                    // called a override method for starting gallery intent
+                    startActivityForResult(intent, FileSender.openFileRequestCode);
+
+
             }
         });
 
@@ -136,15 +157,76 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
+
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
+            if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
+
+                uri = intent.getData();
+                /*runOnUiThread(() -> {
+                    progressDialog = new ProgressDialog(MainActivity.this);
+                    progressDialog.setMessage("Loading..."); // Setting Message
+                    progressDialog.setTitle("ProgressDialog"); // Setting Title
+                    progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
+                    progressDialog.show(); // Display Progress Dialog
+                    progressDialog.setCancelable(false);
+                    new Thread(new Runnable() {
+                        public void run() {
+                            try {
+                                Thread.sleep(100000);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            progressDialog.dismiss();
+                        }
+                    }).start();
+                });*/
+                runOnUiThread(() -> {
+                    progressDialog = new ProgressDialog(MainActivity.this);
+                    progressDialog.setMax(10000); // Progress Dialog Max Value
+                    progressDialog.setMessage("Loading..."); // Setting Message
+                    progressDialog.setTitle("ProgressDialog"); // Setting Title
+                    progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL); // Progress Dialog Style Horizontal
+                    progressDialog.show(); // Display Progress Dialog
+                    progressDialog.setCancelable(false);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                while (progressDialog.getProgress() <= progressDialog.getMax()) {
+                                    Thread.sleep(200);
+                                    if (progressDialog.getProgress() == progressDialog.getMax()) {
+                                        progressDialog.dismiss();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                });
+
+
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            fileSender.sendFile(uri, clientObject.sendingQueue, progressDialog);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        progressDialog.dismiss();
+                    }
+                }).start();
+
+            }
+
+
 
         // if this is a gallery opening request
-        if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
-            Uri uri = intent.getData();
-            fileSender.sendFile(uri, clientObject.sendingQueue);
-        }
+
     }
 
 

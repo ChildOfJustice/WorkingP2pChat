@@ -1,5 +1,6 @@
 package com.example.chattest;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -21,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
+    private boolean isImageScaled = false;
 
     private final LayoutInflater inflater;
     private final List<Protocol> protocols;
@@ -56,17 +59,33 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
             if(protocol.getMsgCode() == MsgCodes.fileEndCode) {
                 Bitmap bmp = BitmapFactory.decodeByteArray(protocol.getData(), 0, protocol.getData().length);
                 holder.viewYou.setImageBitmap(bmp);
+                holder.textViewYouTime.setVisibility(View.INVISIBLE);
+                holder.textViewAnother.setVisibility(View.INVISIBLE);
+                holder.textViewAnotherTime.setVisibility(View.INVISIBLE);
+                holder.textViewYou.setVisibility(View.INVISIBLE);
             } else {
                 holder.textViewYou.setText(new String(protocol.getData()));
                 holder.textViewYouTime.setText(protocol.getTime());
+                holder.textViewAnother.setVisibility(View.INVISIBLE);
+                holder.textViewAnotherTime.setVisibility(View.INVISIBLE);
+                holder.viewYou.setVisibility(View.INVISIBLE);
+                holder.viewAnother.setVisibility(View.INVISIBLE);
             }
         } else {
             if(protocol.getMsgCode() == MsgCodes.fileEndCode) {
                 Bitmap bmp = BitmapFactory.decodeByteArray(protocol.getData(), 0, protocol.getData().length);
                 holder.viewAnother.setImageBitmap(bmp);
+                holder.textViewAnotherTime.setVisibility(View.INVISIBLE);
+                holder.textViewYou.setVisibility(View.INVISIBLE);
+                holder.textViewYouTime.setVisibility(View.INVISIBLE);
+                holder.textViewAnother.setVisibility(View.INVISIBLE);
             } else {
                 holder.textViewAnother.setText(new String(protocol.getData()));
                 holder.textViewAnotherTime.setText(protocol.getTime());
+                holder.textViewYou.setVisibility(View.INVISIBLE);
+                holder.textViewYouTime.setVisibility(View.INVISIBLE);
+                holder.viewYou.setVisibility(View.INVISIBLE);
+                holder.viewAnother.setVisibility(View.INVISIBLE);
             }
         }
     }
@@ -88,6 +107,38 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
             textViewAnotherTime = (TextView) view.findViewById(R.id.textViewAnotherTime);
             viewYou = (ImageView) view.findViewById(R.id.viewYou);
             viewAnother = (ImageView) view.findViewById(R.id.viewAnother);
+            viewYou.setOnClickListener(v -> {
+                AlertDialog.Builder ImageDialog = new AlertDialog.Builder(context);
+                ImageDialog.setTitle("Picture");
+                viewYou.buildDrawingCache();
+                ImageView showImage = new ImageView(context);
+                showImage.setMinimumHeight(2000);
+                showImage.setImageBitmap(viewYou.getDrawingCache());
+                ImageDialog.setView(showImage);
+                ImageDialog.show();
+                showImage.setOnClickListener(v1 -> {
+                    if (!isImageScaled) v1.animate().scaleX(1.4f).scaleY(1.4f).setDuration(500);
+                    if (isImageScaled) v1.animate().scaleX(1f).scaleY(1f).setDuration(500);
+                    isImageScaled = !isImageScaled;
+                });
+            });
+
+            viewAnother.setOnClickListener(v -> {
+                AlertDialog.Builder ImageDialog = new AlertDialog.Builder(context);
+                ImageDialog.setTitle("Picture");
+                viewAnother.buildDrawingCache();
+                ImageView showImage = new ImageView(context);
+                showImage.setMinimumHeight(2000);
+                showImage.setImageBitmap(viewAnother.getDrawingCache());
+                ImageDialog.setView(showImage);
+                ImageDialog.show();
+                showImage.setOnClickListener(v1 -> {
+                    if (!isImageScaled) v1.animate().scaleX(1.4f).scaleY(1.4f).setDuration(500);
+                    if (isImageScaled) v1.animate().scaleX(1f).scaleY(1f).setDuration(500);
+                    isImageScaled = !isImageScaled;
+                });
+            });
+
         }
     }
 }
