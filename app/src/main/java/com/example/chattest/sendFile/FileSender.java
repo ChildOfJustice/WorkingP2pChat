@@ -48,7 +48,7 @@ public class FileSender {
         this.core = core;
     }
 
-    public void sendImage(Uri uri, SendingQueue sendingQueue) {
+    public void sendImage(Uri uri, SendingQueue sendingQueue, ProgressDialog progressDialog) {
         int fileSize = 0;
         int bytesRead = 0;
         Reader in = null;

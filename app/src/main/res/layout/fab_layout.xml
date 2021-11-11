@@ -12,7 +12,7 @@
         android:layout_margin="16dp"
 
 
-        android:src="@drawable/ic_key"
+        android:src="@android:drawable/ic_menu_compass"
         android:visibility="invisible"
         app:backgroundTint="@color/purple_200"
         app:fabSize="mini" />
@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:src="@drawable/ic_file"
+        android:src="@android:drawable/ic_menu_myplaces"
         android:visibility="invisible"
         app:backgroundTint="@color/purple_200"
         app:fabSize="mini" />
@@ -35,7 +35,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
 
-        android:src="@drawable/ic_image"
+        android:src="@android:drawable/ic_menu_share"
         android:visibility="invisible"
         app:backgroundTint="@color/purple_200"
 

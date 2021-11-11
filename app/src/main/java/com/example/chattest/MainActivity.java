@@ -50,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     String receivingFileName;
     boolean startedFileReceiving = false;
 
-    boolean startedFileSending = false;
     FragmentManager manager;
     DialogFragment dialogBar;
 
@@ -221,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     public void run() {
                         try {
-                            fileSender.sendFile(uri, clientObject.sendingQueue, progressDialog);
+                            fileSender.sendImage(uri, clientObject.sendingQueue, progressDialog);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
