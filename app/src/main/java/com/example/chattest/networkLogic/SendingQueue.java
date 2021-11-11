@@ -82,7 +82,10 @@ public class SendingQueue {
                         Log.d(Constants.TAG, "Sending an encrypted node: " + new String(protocol.getData()));
                     }
                 }
-                //Log.w(Constants.TAG, "Cipher module was not set!!! sending UNENCRYPTED msg: " + protocol.getData().length);
+                else {
+                    Log.w(Constants.TAG, "Cipher module was not set!!! sending UNENCRYPTED msg: " + protocol.getData().length);
+                }
+                //
 
                 byte[] serialized = protocol.serialize();
                 if(serialized == null){
@@ -106,7 +109,9 @@ public class SendingQueue {
 
         threadPoolExecutor.execute(task);
     }
-
+    public void setCipher(CipherModule cipher){
+        this.cipher = cipher;
+    }
     public void dispose(){
         threadPoolExecutor.shutdown();
     }

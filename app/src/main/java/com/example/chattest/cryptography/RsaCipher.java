@@ -33,6 +33,7 @@ import com.example.chattest.utils.Constants;
 public class RsaCipher implements CipherModule {
     PrivateKey privateKey;
     PublicKey publicKey;
+    PublicKey publicKey2;
 
     public RsaCipher()  {
 
@@ -110,6 +111,20 @@ public class RsaCipher implements CipherModule {
         Cipher encryptCipher = null;
         try {
             encryptCipher = Cipher.getInstance("RSA");
+            encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey2);
+            return encryptCipher.doFinal(data);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+
+        //byte[] secretMessageBytes = secretMessage.getBytes(StandardCharsets.UTF_8);)
+        //String encodedMessage = Base64.getEncoder().encodeToString(encryptedMessageBytes);
+        return new byte[0];
+    }
+    public byte[] encryptTESTSSSSSSSS(byte[] data) {
+        Cipher encryptCipher = null;
+        try {
+            encryptCipher = Cipher.getInstance("RSA");
             encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
             return encryptCipher.doFinal(data);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
@@ -178,13 +193,16 @@ public class RsaCipher implements CipherModule {
 
 
 
-    public void importPublicKey(byte[] data) {
+    public void importPublicKey(byte[] data, boolean myKey) {
         try {
 //            byte[] publicKeyBytes = Files.readAllBytes(publicKeyFile.toPath());
 
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(data);
-            publicKey = keyFactory.generatePublic(publicKeySpec);
+            if(myKey)
+                publicKey = keyFactory.generatePublic(publicKeySpec);
+            else
+                publicKey2 = keyFactory.generatePublic(publicKeySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
         }

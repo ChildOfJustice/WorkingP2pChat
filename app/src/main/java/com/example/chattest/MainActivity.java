@@ -218,6 +218,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
+
+        RsaCipher rsaTemp = new RsaCipher();
+
         if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
 
             uri = intent.getData();
@@ -291,10 +294,16 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            cipher = new RsaCipher();
+//            cipher = new RsaCipher();
 //                String fileText = Utils.readTextFile(uri, this); // getting files inside information.
 
-            cipher.importPublicKey(Utils.readTextFileBytes(uri, this));
+            rsaTemp.importPublicKey(Utils.readTextFileBytes(uri, this), true);
+
+            Protocol ourKeyProtocol = new Protocol();
+            ourKeyProtocol.setMsgCode(MsgCodes.keyCode);
+            ourKeyProtocol.setData(rsaTemp.getPubKey());
+            clientObject.sendingQueue.send(ourKeyProtocol);
+
 //                rsaCipher.importPublicKey(Utils.readTextFileBytes(uri, this));
 
 //                cipher.importKeyFromString(fileText, true);
@@ -320,30 +329,19 @@ public class MainActivity extends AppCompatActivity {
 
 //            cipher = new RsaCipher();
 //                String fileText = Utils.readTextFile(uri, this); // getting files inside information.
-            cipher.importPrivateKey(Utils.readTextFileBytes(uri, this));
+            rsaTemp.importPrivateKey(Utils.readTextFileBytes(uri, this));
 //                rsaCipher.importPublicKey(Utils.readTextFileBytes(uri, this));
 
 //                cipher.importKeyFromString(fileText, true);
 
-            String text = "AAAA";
-            Log.d(Constants.TAG, "text !!!: "+text);
-            byte[] encrypted = cipher.encrypt(text.getBytes());
-            Log.d(Constants.TAG, "EN !!!: "+new String(encrypted));
-            Log.d(Constants.TAG, "DEC !!!: "+new String(cipher.decrypt(encrypted)));
+//            String text = "AAAA";
+//            Log.d(Constants.TAG, "text !!!: "+text);
+//            byte[] encrypted = rsaTemp.encryptTESTSSSSSSSS(text.getBytes());
+//            Log.d(Constants.TAG, "EN !!!: "+new String(encrypted));
+//            Log.d(Constants.TAG, "DEC !!!: "+new String(rsaTemp.decrypt(encrypted)));
 
-            clientObject.setCipher(cipher);
-            serverObject.setCipher(cipher);
-
-            Protocol ourKeyProtocol = new Protocol();
-            ourKeyProtocol.setMsgCode(MsgCodes.keyCode);
-            ourKeyProtocol.setData(cipher.getPubKey());
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            clientObject.sendingQueue.send(ourKeyProtocol);
+//            clientObject.setCipher(cipher);
+            serverObject.setCipher(rsaTemp);
         }
     }
 
@@ -494,10 +492,13 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MsgCodes.keyCode:
                     //TODO
-                    RsaCipher cipherModule = new RsaCipher();
-                    cipherModule.importPublicKey(messageProtocol.getData());
 
-                    clientObject.setCipher(cipherModule);
+                    if(!messageProtocol.isFromThisDevice()){
+                        RsaCipher cipherModule = new RsaCipher();
+                        cipherModule.importPublicKey(messageProtocol.getData(), false);
+
+                        clientObject.setCipher(cipherModule);
+                    }
                     break;
                 case MsgCodes.disconnectCode:
 //                    textView.setPadding(0, 0, 0, 0);

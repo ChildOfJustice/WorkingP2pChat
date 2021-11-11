@@ -70,8 +70,7 @@ public class ClientClass extends Thread implements Serializable {
 
     public void setCipher(CipherModule cipher){
         this.cipher = cipher;
-
-        sendingQueue = new SendingQueue(socket, core, cipher);
+        sendingQueue.setCipher(cipher);
     }
 }
 
