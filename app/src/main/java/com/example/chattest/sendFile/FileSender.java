@@ -1,6 +1,7 @@
 package com.example.chattest.sendFile;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -17,6 +18,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.example.chattest.MainActivity;
 import com.example.chattest.R;
@@ -49,6 +52,7 @@ public class FileSender {
         int fileSize = 0;
         int bytesRead = 0;
         Reader in = null;
+
         byte[] bytes = new byte[0];
         try {
             Bitmap bitmap = getBitmapFromUri(uri);
@@ -101,7 +105,9 @@ public class FileSender {
         byte[] myBuffer = new byte[1024*7];
         while ((bytesRead = byteArrayInputStream.read(myBuffer, 0, myBuffer.length)) != -1)
         {
-
+            double p = myBuffer.length;
+            double pp = bytes.length;
+            progressDialog.incrementProgressBy((int) ((p/pp)*10000));
             try {
                 Thread.sleep(50);//TODO FUCK
             } catch (InterruptedException e) {
