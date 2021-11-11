@@ -4,6 +4,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
+import com.example.chattest.cryptography.CipherModule;
 import com.example.chattest.utils.Constants;
 
 import java.io.IOException;
@@ -19,6 +20,8 @@ public class ServerClass extends Thread {
     ServerSocket serverSocket;
     int port;
     volatile MainActivity core;
+
+    private CipherModule cipher;
 
     public ServerClass(int port, MainActivity core) {
         this.port = port;
@@ -39,7 +42,11 @@ public class ServerClass extends Thread {
             socket = serverSocket.accept();
             Log.d(Constants.TAG, "Accepted a Client");
 
-            receiver = new Receiver(socket, core);
+            if(cipher == null)
+                receiver = new Receiver(socket, core);
+            else
+                receiver = new Receiver(socket, core, cipher);
+
             receiver.start();
             Log.d(Constants.TAG, "Receiver has been started");
 
@@ -49,5 +56,9 @@ public class ServerClass extends Thread {
         } catch (Exception e) {
             Log.d(Constants.TAG, "ERROR: " + e);
         }
+    }
+
+    public void setCipher(CipherModule cipher){
+        this.cipher = cipher;
     }
 }

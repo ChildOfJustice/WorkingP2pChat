@@ -5,6 +5,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
+import com.example.chattest.cryptography.CipherModule;
 import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
@@ -27,9 +28,25 @@ public class Receiver extends Thread implements Serializable {
     private final MainActivity core;
     private boolean running = true;
 
+    public boolean encEnabled = false;
+    private CipherModule cipher;
+
 //    public AddProtocolNodeHandler showProtocolNodeHandler;
 
     public Receiver(Socket skt, MainActivity core) {
+        deserializationQueue = (ThreadPoolExecutor) newFixedThreadPool(1);
+
+        socket = skt;
+        this.core = core;
+        try {
+            inputStream = socket.getInputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public Receiver(Socket skt, MainActivity core, CipherModule cipher) {
+        this.cipher = cipher;
+
         deserializationQueue = (ThreadPoolExecutor) newFixedThreadPool(1);
 
         socket = skt;
@@ -78,6 +95,13 @@ public class Receiver extends Thread implements Serializable {
                 Log.e(Constants.TAG, "Protocol deserialization FAILED!!!: ");
             } else {
                 Log.d(Constants.TAG, "Received a protocol node with size: " + protocol.getData().length);
+
+                if(cipher != null){
+                    byte[] decryptedData = cipher.decrypt(protocol.getData());
+                    protocol.setData(decryptedData);
+                } else {
+                    Log.w(Constants.TAG, "Cipher module was not set!!! will not DECRYPT msg: " + protocol.getData().length);
+                }
 
                 protocol.setFromThisDevice(false);
 

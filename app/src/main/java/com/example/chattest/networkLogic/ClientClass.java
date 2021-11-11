@@ -3,6 +3,7 @@ package com.example.chattest.networkLogic;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
+import com.example.chattest.cryptography.CipherModule;
 import com.example.chattest.utils.Constants;
 
 import java.io.IOException;
@@ -16,6 +17,8 @@ public class ClientClass extends Thread implements Serializable {
     String hostAdd;
     MainActivity core;
     int port;
+
+    public CipherModule cipher;
 
     public ClientClass(String hostAddress, int port, MainActivity core) {
         this.core = core;
@@ -31,7 +34,10 @@ public class ClientClass extends Thread implements Serializable {
                 Log.d(Constants.TAG, "Client is trying to connect ot the server: " + hostAdd + ":" + port);
                 socket = new Socket(hostAdd, port);
 
-                sendingQueue = new SendingQueue(socket, core);
+                if(cipher == null)
+                    sendingQueue = new SendingQueue(socket, core);
+                else
+                    sendingQueue = new SendingQueue(socket, core, cipher);
 
                 //TODO:
                 //core.showToast("Connected to other device. You can now exchange messages.");
@@ -60,6 +66,10 @@ public class ClientClass extends Thread implements Serializable {
 //                core.showToast("Connected to other device. You can now exchange messages.");
             }
         }
+    }
+
+    public void setCipher(CipherModule cipher){
+        this.cipher = cipher;
     }
 }
 
