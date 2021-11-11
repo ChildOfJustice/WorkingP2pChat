@@ -22,6 +22,7 @@ public class ServerClass extends Thread {
     volatile MainActivity core;
 
     private CipherModule cipher;
+    public boolean encEnabled = false;
 
     public ServerClass(int port, MainActivity core) {
         this.port = port;
@@ -42,10 +43,10 @@ public class ServerClass extends Thread {
             socket = serverSocket.accept();
             Log.d(Constants.TAG, "Accepted a Client");
 
-            if(cipher == null)
+//            if(cipher == null)
                 receiver = new Receiver(socket, core);
-            else
-                receiver = new Receiver(socket, core, cipher);
+//            else
+//                receiver = new Receiver(socket, core, cipher);
 
             receiver.start();
             Log.d(Constants.TAG, "Receiver has been started");
@@ -60,5 +61,9 @@ public class ServerClass extends Thread {
 
     public void setCipher(CipherModule cipher){
         this.cipher = cipher;
+        receiver.setCipher(cipher);
+//        receiver.dispose();
+//        receiver = new Receiver(socket, core, cipher);
+//        receiver.start();
     }
 }

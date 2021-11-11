@@ -26,6 +26,9 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import android.util.Base64;
+import android.util.Log;
+
+import com.example.chattest.utils.Constants;
 
 public class RsaCipher implements CipherModule {
     PrivateKey privateKey;
@@ -87,6 +90,9 @@ public class RsaCipher implements CipherModule {
             e.printStackTrace();
         }
     }
+    public byte[] getPubKeyBytes(){
+        return publicKey.getEncoded();
+    }
     public void exportPrivateKey(String fileName){
         try (FileOutputStream fos = new FileOutputStream(fileName)) {
             fos.write(privateKey.getEncoded());
@@ -94,7 +100,9 @@ public class RsaCipher implements CipherModule {
             e.printStackTrace();
         }
     }
-
+    public byte[] getPrivateKeyBytes(){
+        return privateKey.getEncoded();
+    }
 
 
     @Override
@@ -125,5 +133,73 @@ public class RsaCipher implements CipherModule {
         }
 
         return new byte[0];
+    }
+
+    @Override
+    public void importKeyFromString(String fileText, boolean importBothKeys) {
+        KeyFactory keyFactory = null;
+        if(importBothKeys) {
+            try {
+                Log.e(Constants.TAG, "ENC FILE 2: " + fileText);
+                String[] expected2 = fileText.split("\n", 2);
+
+                keyFactory = KeyFactory.getInstance("RSA");
+                EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(expected2[0].getBytes());
+                publicKey = keyFactory.generatePublic(publicKeySpec);
+
+                EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(expected2[1].getBytes());
+                privateKey = keyFactory.generatePrivate(privateKeySpec);
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+                e.printStackTrace();
+            }
+        } else {
+            //only pub key
+            try {
+                keyFactory = KeyFactory.getInstance("RSA");
+                EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(fileText.getBytes());
+                publicKey = keyFactory.generatePublic(publicKeySpec);
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    public byte[] getPubKey() {
+        return getPubKeyBytes();
+    }
+
+
+
+
+
+
+
+
+
+
+    public void importPublicKey(byte[] data) {
+        try {
+//            byte[] publicKeyBytes = Files.readAllBytes(publicKeyFile.toPath());
+
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(data);
+            publicKey = keyFactory.generatePublic(publicKeySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void importPrivateKey(byte[] data) {
+        try {
+//            byte[] publicKeyBytes = Files.readAllBytes(publicKeyFile.toPath());
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(data);
+            privateKey = keyFactory.generatePrivate(privateKeySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+
     }
 }

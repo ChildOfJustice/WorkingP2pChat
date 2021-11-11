@@ -102,7 +102,7 @@ public class FileSender {
 //        networkManager.sendingQueue.sendNode(ourMsgProtocol);
 
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-        byte[] myBuffer = new byte[1024*7];
+        byte[] myBuffer = new byte[1024*7];//1024*7
         while ((bytesRead = byteArrayInputStream.read(myBuffer, 0, myBuffer.length)) != -1)
         {
             double p = myBuffer.length;
@@ -148,15 +148,7 @@ public class FileSender {
 
 
 
-    public void saveFile(String path, String fileName, String data) {
-//        String root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
-//        File myDir = new File(root + "/saved_images");
-//        myDir.mkdirs();
-//        Random generator = new Random();
-//        int n = 10000;
-//        n = generator.nextInt(n);
-//        String fname = "Some-" + n + ".txt";
-//        File file = new File(myDir, fname);
+    public void saveFile(String path, String fileName, byte[] data) {
 
         File mFolder = new File(core.getExternalFilesDir(null) + path);
         File imgFile = new File(mFolder.getAbsolutePath() + "/" + fileName);
@@ -175,7 +167,7 @@ public class FileSender {
         try {
             FileOutputStream out = new FileOutputStream(imgFile);
 //            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
-            out.write(data.getBytes()); // writing
+            out.write(data); // writing
             out.flush();
             out.close();
         }

@@ -28,25 +28,12 @@ public class Receiver extends Thread implements Serializable {
     private final MainActivity core;
     private boolean running = true;
 
-    public boolean encEnabled = false;
+
     private CipherModule cipher;
 
 //    public AddProtocolNodeHandler showProtocolNodeHandler;
 
     public Receiver(Socket skt, MainActivity core) {
-        deserializationQueue = (ThreadPoolExecutor) newFixedThreadPool(1);
-
-        socket = skt;
-        this.core = core;
-        try {
-            inputStream = socket.getInputStream();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    public Receiver(Socket skt, MainActivity core, CipherModule cipher) {
-        this.cipher = cipher;
-
         deserializationQueue = (ThreadPoolExecutor) newFixedThreadPool(1);
 
         socket = skt;
@@ -65,8 +52,11 @@ public class Receiver extends Thread implements Serializable {
 
         while (socket != null) {
             try {
-                if(!running)
+                if(!running){
+                    Log.e(Constants.TAG, "BREAK");
                     break;
+                }
+
 
                 while(inputStream.available() != 0);
 
@@ -86,6 +76,7 @@ public class Receiver extends Thread implements Serializable {
                 e.printStackTrace();
             }
         }
+        Log.e(Constants.TAG, "WHILE BREAK");
     }
 
     private void scheduleDeserializationTask(byte[] data, int receivedBytes){
@@ -96,12 +87,17 @@ public class Receiver extends Thread implements Serializable {
             } else {
                 Log.d(Constants.TAG, "Received a protocol node with size: " + protocol.getData().length);
 
-                if(cipher != null){
-                    byte[] decryptedData = cipher.decrypt(protocol.getData());
-                    protocol.setData(decryptedData);
+                if(cipher != null) {
+                    if(protocol.getMsgCode() != MsgCodes.keyCode && protocol.getMsgCode() != MsgCodes.imgStartCode && protocol.getMsgCode() != MsgCodes.imgPartCode && protocol.getMsgCode() != MsgCodes.imgEndCode){
+                        byte[] decryptedData = cipher.decrypt(protocol.getData());
+                        protocol.setData(decryptedData);
+                        Log.d(Constants.TAG, "Received a enc protocol node, decrypted is: " + new String(protocol.getData()));
+                    }
                 } else {
                     Log.w(Constants.TAG, "Cipher module was not set!!! will not DECRYPT msg: " + protocol.getData().length);
                 }
+
+                //Log.w(Constants.TAG, "Cipher module was not set!!! will not DECRYPT msg: " + protocol.getData().length);
 
                 protocol.setFromThisDevice(false);
 
@@ -117,5 +113,9 @@ public class Receiver extends Thread implements Serializable {
         Log.d(Constants.TAG, "Receiver was destroyed");
         running = false;
         socket = null;
+    }
+
+    public void setCipher(CipherModule cipher){
+        this.cipher = cipher;
     }
 }

@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.example.chattest.MainActivity;
 import com.example.chattest.cryptography.CipherModule;
+import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
 
@@ -67,14 +68,21 @@ public class SendingQueue {
         Runnable task = () -> {
             try {
 
+                Protocol tempProtocol = new Protocol();
+                tempProtocol.setData(protocol.getData());
+                tempProtocol.setMsgCode(protocol.getMsgCode());
+
                 Log.d(Constants.TAG, "Sending a node, size is: " + protocol.getData().length);
 
-                if(cipher != null){
-                    byte[] encryptedData = cipher.encrypt(protocol.getData());
-                    protocol.setData(encryptedData);
-                } else {
-                    Log.w(Constants.TAG, "Cipher module was not set!!! sending UNENCRYPTED msg: " + protocol.getData().length);
+                if(cipher != null) {
+                    if(protocol.getMsgCode() != MsgCodes.keyCode && protocol.getMsgCode() != MsgCodes.imgStartCode && protocol.getMsgCode() != MsgCodes.imgPartCode && protocol.getMsgCode() != MsgCodes.imgEndCode){
+
+                        byte[] encryptedData = cipher.encrypt(protocol.getData());
+                        protocol.setData(encryptedData);
+                        Log.d(Constants.TAG, "Sending an encrypted node: " + new String(protocol.getData()));
+                    }
                 }
+                //Log.w(Constants.TAG, "Cipher module was not set!!! sending UNENCRYPTED msg: " + protocol.getData().length);
 
                 byte[] serialized = protocol.serialize();
                 if(serialized == null){
@@ -84,9 +92,10 @@ public class SendingQueue {
 
                     Log.d(Constants.TAG, "Sent a node, full serialized size is: " + serialized.length);
 
-                    protocol.setFromThisDevice(true);
+                    tempProtocol.setFromThisDevice(true);
+                    tempProtocol.setCurrentTime();
 
-                    core.addProtocolNode(protocol);
+                    core.addProtocolNode(tempProtocol);
                 }
             } catch (IOException e) {
                 Log.e(Constants.TAG, "Can't send message: " + e);

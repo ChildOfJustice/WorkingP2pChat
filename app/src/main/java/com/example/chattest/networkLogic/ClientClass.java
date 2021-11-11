@@ -18,7 +18,7 @@ public class ClientClass extends Thread implements Serializable {
     MainActivity core;
     int port;
 
-    public CipherModule cipher;
+    private CipherModule cipher;
 
     public ClientClass(String hostAddress, int port, MainActivity core) {
         this.core = core;
@@ -70,6 +70,8 @@ public class ClientClass extends Thread implements Serializable {
 
     public void setCipher(CipherModule cipher){
         this.cipher = cipher;
+
+        sendingQueue = new SendingQueue(socket, core, cipher);
     }
 }
 

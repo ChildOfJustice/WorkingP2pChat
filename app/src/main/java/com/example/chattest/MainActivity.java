@@ -6,7 +6,9 @@ import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,22 +21,27 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.example.chattest.cryptography.CipherModule;
+import com.example.chattest.cryptography.RsaCipher;
 import com.example.chattest.networkLogic.ClientClass;
 import com.example.chattest.networkLogic.ServerClass;
 import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.sendFile.FileSender;
 import com.example.chattest.utils.Constants;
+import com.example.chattest.utils.Utils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     boolean checkFabs;
@@ -62,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     FloatingActionButton fab1, fab2, fab3;
 
+    RsaCipher cipher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,10 +91,30 @@ public class MainActivity extends AppCompatActivity {
         fab3 =  findViewById(R.id.fab_3);
 
 
+
+
+
+
+
+
+
         startServer(YouPort);
 
-
         fileSender = new FileSender(this);
+
+        RsaCipher rsa = new RsaCipher();
+        try {
+            rsa.generateKeys();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+//                String str1 = new String(rsa.getPubKeyBytes());
+//                String str1 = new String(rsa.getPubKeyBytes(), StandardCharsets.UTF_8);
+//                String str2 = new String(rsa.getPrivateKeyBytes(), StandardCharsets.UTF_8);
+//                String all = str1 + "\n" + str2;
+//                Log.e(Constants.TAG, "ENC FILE 1: " + all);
+        fileSender.saveFile("/encFiles", "pubkey.txt", rsa.getPubKeyBytes());
+        fileSender.saveFile("/encFiles", "privatekey.txt", rsa.getPrivateKeyBytes());
 
         startClient(AnotherIP, AnotherPort);
 
@@ -102,48 +130,68 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        //Обработчик нижней кнопки
+        //send pub enc key
         fab1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                progressDialog = new ProgressDialog(MainActivity.this);
-                progressDialog.setMessage("Loading..."); // Setting Message
-                progressDialog.setTitle("ProgressDialog"); // Setting Title
-                progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-                progressDialog.show(); // Display Progress Dialog
-                progressDialog.setCancelable(false);
-                new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        progressDialog.dismiss();
+
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+
+                builder.setTitle("Confirm");
+                builder.setMessage("Are you sure?");
+
+                builder.setPositiveButton("Pub", new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Do nothing but close the dialog
+                        // creating new intent for selecting key file
+                        Intent intent = new Intent().setType("text/plain").setAction(Intent.ACTION_GET_CONTENT);
+                        // called a override method for starting gallery intent
+                        startActivityForResult(intent, Constants.openPubKeyFileRequestCode);
+                        dialog.dismiss();
                     }
-                }).start();
+                });
+
+                builder.setNegativeButton("Private", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // creating new intent for selecting key file
+                        Intent intent = new Intent().setType("text/plain").setAction(Intent.ACTION_GET_CONTENT);
+                        // called a override method for starting gallery intent
+                        startActivityForResult(intent, Constants.openPrivateKeyFileRequestCode);
+                        // Do nothing
+                        dialog.dismiss();
+                    }
+                });
+
+                AlertDialog alert = builder.create();
+                alert.show();
+
             }
         });
 
-        //Обработчик средней кнопки
+        //send file
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(v.getContext(), "Средняя кнопка", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(v.getContext(), "Средняя кнопка", Toast.LENGTH_SHORT).show();
+                // creating new gallery intent for selecting text file only
+                Intent intent = new Intent().setType("*").setAction(Intent.ACTION_GET_CONTENT);
+                // called a override method for starting gallery intent
+                startActivityForResult(intent, FileSender.openFileRequestCode);
             }
         });
 
-        //Обработчик верхняя кнопки
+        //send Image
         fab3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                    // creating new gallery intent for selecting text file only
-                    Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
-                    // called a override method for starting gallery intent
-                    startActivityForResult(intent, FileSender.openFileRequestCode);
-
-
+                // creating new gallery intent for selecting text file only
+                Intent intent = new Intent().setType("image/*").setAction(Intent.ACTION_GET_CONTENT);
+                // called a override method for starting gallery intent
+                startActivityForResult(intent, FileSender.openFileRequestCode);
             }
         });
 
@@ -170,65 +218,133 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-            if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
+        if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
 
-                uri = intent.getData();
-                /*runOnUiThread(() -> {
-                    progressDialog = new ProgressDialog(MainActivity.this);
-                    progressDialog.setMessage("Loading..."); // Setting Message
-                    progressDialog.setTitle("ProgressDialog"); // Setting Title
-                    progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-                    progressDialog.show(); // Display Progress Dialog
-                    progressDialog.setCancelable(false);
-                    new Thread(new Runnable() {
-                        public void run() {
-                            try {
-                                Thread.sleep(100000);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            progressDialog.dismiss();
-                        }
-                    }).start();
-                });*/
-                runOnUiThread(() -> {
-                    progressDialog = new ProgressDialog(MainActivity.this);
-                    progressDialog.setMax(10000); // Progress Dialog Max Value
-                    progressDialog.setMessage("Loading..."); // Setting Message
-                    progressDialog.setTitle("ProgressDialog"); // Setting Title
-                    progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL); // Progress Dialog Style Horizontal
-                    progressDialog.show(); // Display Progress Dialog
-                    progressDialog.setCancelable(false);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                while (progressDialog.getProgress() <= progressDialog.getMax()) {
-                                    Thread.sleep(200);
-                                    if (progressDialog.getProgress() == progressDialog.getMax()) {
-                                        progressDialog.dismiss();
-                                    }
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }).start();
-                });
-
-
+            uri = intent.getData();
+            /*runOnUiThread(() -> {
+                progressDialog = new ProgressDialog(MainActivity.this);
+                progressDialog.setMessage("Loading..."); // Setting Message
+                progressDialog.setTitle("ProgressDialog"); // Setting Title
+                progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
+                progressDialog.show(); // Display Progress Dialog
+                progressDialog.setCancelable(false);
                 new Thread(new Runnable() {
                     public void run() {
                         try {
-                            fileSender.sendImage(uri, clientObject.sendingQueue, progressDialog);
+                            Thread.sleep(100000);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                         progressDialog.dismiss();
                     }
                 }).start();
+            });*/
+            runOnUiThread(() -> {
+                progressDialog = new ProgressDialog(MainActivity.this);
+                progressDialog.setMax(10000); // Progress Dialog Max Value
+                progressDialog.setMessage("Loading..."); // Setting Message
+                progressDialog.setTitle("ProgressDialog"); // Setting Title
+                progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL); // Progress Dialog Style Horizontal
+                progressDialog.show(); // Display Progress Dialog
+                progressDialog.setCancelable(false);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            while (progressDialog.getProgress() <= progressDialog.getMax()) {
+                                Thread.sleep(200);
+                                if (progressDialog.getProgress() == progressDialog.getMax()) {
+                                    progressDialog.dismiss();
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            });
 
+
+            new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        fileSender.sendImage(uri, clientObject.sendingQueue, progressDialog);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    progressDialog.dismiss();
+                }
+            }).start();
+
+        }
+        if(requestCode == Constants.openPubKeyFileRequestCode && resultCode == RESULT_OK){
+                Uri uri = intent.getData();
+                String path = Utils.getFilePathFromUri(uri); // getting file path
+                File file = new File(path);
+                if(file.exists())
+                    Log.d(Constants.TAG, "Selected file exists");
+
+
+
+//                Log.d(Constants.TAG, "text inside file: "+fileText);
+
+
+
+
+            cipher = new RsaCipher();
+//                String fileText = Utils.readTextFile(uri, this); // getting files inside information.
+
+            cipher.importPublicKey(Utils.readTextFileBytes(uri, this));
+//                rsaCipher.importPublicKey(Utils.readTextFileBytes(uri, this));
+
+//                cipher.importKeyFromString(fileText, true);
+//                clientObject.setCipher(cipher);
+//                serverObject.setCipher(cipher);
+//
+//                addMsgToQueue(cipher.getPubKey(), MsgCodes.keyCode);
             }
+        if(requestCode == Constants.openPrivateKeyFileRequestCode && resultCode == RESULT_OK){
+            Uri uri = intent.getData();
+            String path = Utils.getFilePathFromUri(uri); // getting file path
+            File file = new File(path);
+            if(file.exists())
+                Log.d(Constants.TAG, "Selected file exists");
+
+
+
+//                Log.d(Constants.TAG, "text inside file: "+fileText);
+//TODO
+
+
+
+
+//            cipher = new RsaCipher();
+//                String fileText = Utils.readTextFile(uri, this); // getting files inside information.
+            cipher.importPrivateKey(Utils.readTextFileBytes(uri, this));
+//                rsaCipher.importPublicKey(Utils.readTextFileBytes(uri, this));
+
+//                cipher.importKeyFromString(fileText, true);
+
+            String text = "AAAA";
+            Log.d(Constants.TAG, "text !!!: "+text);
+            byte[] encrypted = cipher.encrypt(text.getBytes());
+            Log.d(Constants.TAG, "EN !!!: "+new String(encrypted));
+            Log.d(Constants.TAG, "DEC !!!: "+new String(cipher.decrypt(encrypted)));
+
+            clientObject.setCipher(cipher);
+            serverObject.setCipher(cipher);
+
+            Protocol ourKeyProtocol = new Protocol();
+            ourKeyProtocol.setMsgCode(MsgCodes.keyCode);
+            ourKeyProtocol.setData(cipher.getPubKey());
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            clientObject.sendingQueue.send(ourKeyProtocol);
+        }
     }
 
 
@@ -270,15 +386,17 @@ public class MainActivity extends AppCompatActivity {
             editTextMessage.requestFocus();
             editTextMessage.setError("Please write your message first");
         } else {
-            Protocol ourMsgProtocol = new Protocol();
-            ourMsgProtocol.setMsgCode(MsgCodes.textCode);
-            ourMsgProtocol.setCurrentTime();
-            ourMsgProtocol.setData(msg.getBytes());
-
-            clientObject.sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
-
+            addMsgToQueue(msg, MsgCodes.textCode);
             editTextMessage.setText("");
         }
+    }
+    private void addMsgToQueue(String msg, byte msgCode){
+        Protocol ourMsgProtocol = new Protocol();
+        ourMsgProtocol.setMsgCode(msgCode);
+        ourMsgProtocol.setCurrentTime();
+        ourMsgProtocol.setData(msg.getBytes());
+
+        clientObject.sendingQueue.send(ourMsgProtocol);
     }
 
 
@@ -374,6 +492,13 @@ public class MainActivity extends AppCompatActivity {
                         startedFileReceiving = false;
                     }
                     break;
+                case MsgCodes.keyCode:
+                    //TODO
+                    RsaCipher cipherModule = new RsaCipher();
+                    cipherModule.importPublicKey(messageProtocol.getData());
+
+                    clientObject.setCipher(cipherModule);
+                    break;
                 case MsgCodes.disconnectCode:
 //                    textView.setPadding(0, 0, 0, 0);
 //
@@ -382,7 +507,7 @@ public class MainActivity extends AppCompatActivity {
 //                    textView.setGravity(Gravity.CENTER);
 //                    textView.setText("Your Pair has been disconnected.");
 
-                    //TODO close everything and return to the main page (or not???)
+
 //                    disconnectHim();
                     break;
                 case MsgCodes.textCode:
@@ -409,89 +534,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
         });
-//
-//
-//        switch (messageProtocol.getMsgCode()){
-//            case MsgCodes.fileStartCode:
-//                Log.d(Constants.TAG, "Got a file sending start request, file size is: " + new String(messageProtocol.getData()));
-//
-//                byteArrayOutputStream = new ByteArrayOutputStream();
-//                startedFileReceiving = true;
-//                break;
-//
-//            case MsgCodes.fileCode:
-//                Log.d(Constants.TAG, "Receiving a file: " + messageProtocol.getData().length);
-//
-//                if(startedFileReceiving){
-//                    try {
-//                        byteArrayOutputStream.write(messageProtocol.getData());
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//                break;
-//
-//            case MsgCodes.fileEndCode:
-//                Log.d(Constants.TAG, "Received the file! file size is: " + new String(messageProtocol.getData()));
-//
-//                byte[] imgBytes = byteArrayOutputStream.toByteArray();
-//                Log.d(Constants.TAG, "Img size is: " + imgBytes.length);
-////                    Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
-////                    imageView.setImageBitmap(bmp);
-//
-//                Protocol fullImageProtocol = new Protocol();
-//                fullImageProtocol.setFromThisDevice(false);
-//                fullImageProtocol.setData(imgBytes);
-//                fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
-//                protocols.add(fullImageProtocol);
-//
-//                runOnUiThread(() -> {
-//                    adapter = new ChatAdapter(this, protocols);
-//                    recyclerView.setAdapter(adapter);
-//                });
-//
-//
-//
-//                startedFileReceiving = false;
-//
-//                break;
-//            case MsgCodes.disconnectCode:
-////                    textView.setPadding(0, 0, 0, 0);
-////
-////                    textView.setTextSize(13);
-////                    conversationLayout.setGravity(View.TEXT_ALIGNMENT_CENTER);
-////                    textView.setGravity(Gravity.CENTER);
-////                    textView.setText("Your Pair has been disconnected.");
-//
-//                //TODO close everything and return to the main page (or not???)
-////                    disconnectHim();
-//                break;
-//            case MsgCodes.textCode:
-//                Log.d(Constants.TAG, "got an ordinary msg: " + new String(messageProtocol.getData()));
-//
-//                protocols.add(messageProtocol);
-//                //adapter.notifyDataSetChanged();
-//                //adapter.notifyItemInserted(protocols.size());
-//                runOnUiThread(() -> {
-//                    adapter = new ChatAdapter(this, protocols);
-//                    recyclerView.setAdapter(adapter);
-//                });
-//
-////
-////                    textView.setTextSize(20);
-////                    textView.setText(new String(messageProtocol.getData())); // setting message on the message textview
-////
-////                    msgTime.setText("(" + Utils.getTime(false) + ")"); // setting messing time
-////
-////                    // creating divider between two messages
-////                    addDividerBetweenTwoMessages();
-////
-////                    // adding 2 more views in linear layout every time
-////                    conversationLayout.addView(textView);
-////                    conversationLayout.addView(msgTime);
-////                    conversations.post(() -> conversations.fullScroll(View.FOCUS_DOWN)); // for getting last message in first
-//                break;
-//        }
     }
 
 
