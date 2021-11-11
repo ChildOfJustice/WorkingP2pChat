@@ -5,6 +5,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import android.util.Log;
 
 import com.example.chattest.MainActivity;
+import com.example.chattest.cryptography.CipherModule;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
 
@@ -24,6 +25,9 @@ public class SendingQueue {
     private OutputStream outputStream;
     private final MainActivity core;
 
+    public boolean encEnabled = false;
+    private CipherModule cipher;
+
     private synchronized void writeToSocketStreamSync(byte[] data) throws IOException {
         //Log.d(Constants.TAG, "OPENED SYNC METHOD to send: " + data.length + " bytes");
         outputStream.write(data);
@@ -42,11 +46,35 @@ public class SendingQueue {
         }
     }
 
+    public SendingQueue(Socket skt, MainActivity core, CipherModule cipher) {
+        this.cipher = cipher;
+        encEnabled = true;
+
+        threadPoolExecutor = (ThreadPoolExecutor) newFixedThreadPool(1);
+
+        socket = skt;
+        this.core = core;
+        try {
+            outputStream = socket.getOutputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     public void send(Protocol protocol) {
         Runnable task = () -> {
             try {
 
                 Log.d(Constants.TAG, "Sending a node, size is: " + protocol.getData().length);
+
+                if(cipher != null){
+                    byte[] encryptedData = cipher.encrypt(protocol.getData());
+                    protocol.setData(encryptedData);
+                } else {
+                    Log.w(Constants.TAG, "Cipher module was not set!!! sending UNENCRYPTED msg: " + protocol.getData().length);
+                }
 
                 byte[] serialized = protocol.serialize();
                 if(serialized == null){
@@ -69,26 +97,6 @@ public class SendingQueue {
 
         threadPoolExecutor.execute(task);
     }
-
-    //will send a piece of protocol without showing it on the sender screen
-//    public void sendNode(Protocol protocol) {
-//        Runnable task = () -> {
-//            //Log.d(Constants.TAG, "Task has been started to send (pure, not protocol size): " + data.getData().length + " msg code is: " + data.getMsgCode());
-//            try {
-//                Log.d(Constants.TAG, "Sending a node, protocol data size is: " + protocol.getData().length);
-//                byte[] serialized = protocol.serialize();
-//                writeToSocketStreamSync(serialized);
-//                Log.d(Constants.TAG, "Sent a node, full serialized size is: " + serialized.length);
-//
-//            } catch (IOException e) {
-//                Log.e(Constants.TAG, "Can't send a node: " + e);
-//            } catch (Exception e) {
-//                Log.e(Constants.TAG, "Error: " + e);
-//            }
-//        };
-//
-//        threadPoolExecutor.execute(task);
-//    }
 
     public void dispose(){
         threadPoolExecutor.shutdown();

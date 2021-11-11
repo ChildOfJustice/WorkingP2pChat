@@ -31,6 +31,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     boolean checkFabs;
@@ -39,9 +40,13 @@ public class MainActivity extends AppCompatActivity {
     ChatAdapter adapter;
 
     ByteArrayOutputStream byteArrayBufferFileYours;
-    ByteArrayOutputStream byteArrayBufferFileTheir;
-    boolean startedFileReceiving = false;
+    String sendingFileName;
     boolean startedFileSending = false;
+
+    ByteArrayOutputStream byteArrayBufferFileTheir;
+    String receivingFileName;
+    boolean startedFileReceiving = false;
+
 
     List<Protocol> protocols;
 
@@ -73,12 +78,11 @@ public class MainActivity extends AppCompatActivity {
         fab3 =  findViewById(R.id.fab_3);
 
 
-        startServer(AnotherPort);
+        startServer(YouPort);
 
         fileSender = new FileSender(this);
 
-        clientObject = new ClientClass(AnotherIP, Integer.parseInt(AnotherPort), this);
-        clientObject.start();
+        startClient(AnotherIP, AnotherPort);
 
 
         //byte[] key = (byte[]) arguments.get("KeyValue");
@@ -143,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
         // if this is a gallery opening request
         if (requestCode == FileSender.openFileRequestCode && resultCode == RESULT_OK) {
             Uri uri = intent.getData();
-            fileSender.sendFile(uri, clientObject.sendingQueue);
+            fileSender.sendImage(uri, clientObject.sendingQueue);
         }
     }
 
@@ -167,6 +171,12 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+    private void startClient(String ip, String port){
+        clientObject = new ClientClass(ip, Integer.parseInt(port), this);
+        clientObject.start();
+    }
+
 
 
 
@@ -208,22 +218,28 @@ public class MainActivity extends AppCompatActivity {
         Log.d(Constants.TAG, "got protocol node with code: " + messageProtocol.getMsgCode());
         runOnUiThread(() -> {
             switch (messageProtocol.getMsgCode()){
-                case MsgCodes.fileStartCode:
-                    Log.d(Constants.TAG, "Got a file sending start request, file size is: " + new String(messageProtocol.getData()));
+                case MsgCodes.imgStartCode:
 
                     if(messageProtocol.isFromThisDevice()) {
+                        Log.d(Constants.TAG, "Got a img sending start request, img name is: " + new String(messageProtocol.getData()));
+
                         byteArrayBufferFileYours = new ByteArrayOutputStream();
+                        sendingFileName = new String(messageProtocol.getData());
                         startedFileSending = true;
                     } else {
+                        Log.d(Constants.TAG, "Got a img receiving start request, img name is: " + new String(messageProtocol.getData()));
+
                         byteArrayBufferFileTheir = new ByteArrayOutputStream();
+                        receivingFileName = new String(messageProtocol.getData());
                         startedFileReceiving = true;
                     }
                     break;
 
-                case MsgCodes.fileCode:
-                    Log.d(Constants.TAG, "Receiving a file: " + messageProtocol.getData().length);
+                case MsgCodes.imgPartCode:
 
                     if(messageProtocol.isFromThisDevice() && startedFileSending) {
+                        Log.d(Constants.TAG, "Sending an img: " + messageProtocol.getData().length);
+
                         try {
                             byteArrayBufferFileYours.write(messageProtocol.getData());
                         } catch (IOException e) {
@@ -231,6 +247,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     if(!messageProtocol.isFromThisDevice() && startedFileReceiving) {
+                        Log.d(Constants.TAG, "Receiving an img: " + messageProtocol.getData().length);
+
                         try {
                             byteArrayBufferFileTheir.write(messageProtocol.getData());
                         } catch (IOException e) {
@@ -239,8 +257,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
 
-                case MsgCodes.fileEndCode:
-                    Log.d(Constants.TAG, "Received the file! file size is: " + new String(messageProtocol.getData()));
+                case MsgCodes.imgEndCode:
+                    Log.d(Constants.TAG, "Received the img! img size is: " + new String(messageProtocol.getData()));
 
                     if(messageProtocol.isFromThisDevice()) {
                         byte[] imgBytes = byteArrayBufferFileYours.toByteArray();
@@ -270,6 +288,8 @@ public class MainActivity extends AppCompatActivity {
                         protocols.add(fullImageProtocol);
                         adapter = new ChatAdapter(this, protocols);
                         recyclerView.setAdapter(adapter);
+
+                        fileSender.saveImage("/images",receivingFileName,imgBytes);
 
                         startedFileReceiving = false;
                     }
