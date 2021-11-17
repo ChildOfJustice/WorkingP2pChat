@@ -79,16 +79,21 @@ public class FileSender {
         Protocol startFileMsg = new Protocol();
         startFileMsg.setMsgCode(MsgCodes.imgStartCode);
         startFileMsg.setCurrentTime();
-        startFileMsg.setData(fileLengthStr.getBytes());
+        try {
+            startFileMsg.setData(fileLengthStr.getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(Constants.TAG, "Cannot set data to send the msg: " + fileLengthStr);
+        }
 
         sendingQueue.send(startFileMsg);
 
 
-//        try {
-//            Thread.sleep(200);//TODO FUCK
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            Thread.sleep(200);//TODO FUCK
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
 //        Protocol ourMsgProtocol = new Protocol();
 //        ourMsgProtocol.setMsgCode(MsgCodes.fileCode);
@@ -98,12 +103,12 @@ public class FileSender {
 //        networkManager.sendingQueue.sendNode(ourMsgProtocol);
 
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-        byte[] myBuffer = new byte[1024*7];
+        byte[] myBuffer = new byte[1024*3];
         while ((bytesRead = byteArrayInputStream.read(myBuffer, 0, myBuffer.length)) != -1)
         {
 
             try {
-                Thread.sleep(50);//TODO FUCK
+                Thread.sleep(250);//TODO FUCK
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -114,18 +119,32 @@ public class FileSender {
             ourMsgProtocol.setCurrentTime();
 
 //                    byte[] aaa = toBytes(myBuffer);
-            ourMsgProtocol.setData(myBuffer);//toBytes(myBuffer)
+            try {
+                ourMsgProtocol.setData(myBuffer);//toBytes(myBuffer)
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e(Constants.TAG, "Cannot set data to send the img node with length: " + myBuffer.length);
+            }
 
             fileSize += bytesRead;
-            sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
+            sendingQueue.send(ourMsgProtocol);
 
         }
-
+        try {
+            Thread.sleep(250);//TODO FUCK
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         String lastNodeBytesCount = String.valueOf(fileSize);
         Protocol endFileMsg = new Protocol();
         endFileMsg.setMsgCode(MsgCodes.imgEndCode);
         endFileMsg.setCurrentTime();
-        endFileMsg.setData(lastNodeBytesCount.getBytes());
+        try {
+            endFileMsg.setData(lastNodeBytesCount.getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(Constants.TAG, "Cannot set data to send the msg: " + lastNodeBytesCount);
+        }
         sendingQueue.send(endFileMsg);
     }
 

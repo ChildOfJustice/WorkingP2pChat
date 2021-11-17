@@ -31,7 +31,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     boolean checkFabs;
@@ -193,9 +192,15 @@ public class MainActivity extends AppCompatActivity {
             Protocol ourMsgProtocol = new Protocol();
             ourMsgProtocol.setMsgCode(MsgCodes.textCode);
             ourMsgProtocol.setCurrentTime();
-            ourMsgProtocol.setData(msg.getBytes());
+            try {
+                ourMsgProtocol.setData(msg.getBytes());
+                clientObject.sendingQueue.send(ourMsgProtocol);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e(Constants.TAG, "Cannot set data to send the msg: " + msg);
+            }
 
-            clientObject.sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
+
 
             editTextMessage.setText("");
         }
@@ -268,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
 
                         Protocol fullImageProtocol = new Protocol();
                         fullImageProtocol.setFromThisDevice(true);
-                        fullImageProtocol.setData(imgBytes);
+                        fullImageProtocol.setAnySizeData_notForSending_(imgBytes);
                         fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
                         protocols.add(fullImageProtocol);
                         adapter = new ChatAdapter(this, protocols);
@@ -283,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
 
                         Protocol fullImageProtocol = new Protocol();
                         fullImageProtocol.setFromThisDevice(false);
-                        fullImageProtocol.setData(imgBytes);
+                        fullImageProtocol.setAnySizeData_notForSending_(imgBytes);
                         fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
                         protocols.add(fullImageProtocol);
                         adapter = new ChatAdapter(this, protocols);

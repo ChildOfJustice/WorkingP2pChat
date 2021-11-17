@@ -14,6 +14,8 @@ import java.io.Serializable;
 
 public class Protocol implements Serializable {
 
+    public static final int BUFFER_SIZE = 1024*5;
+
     private String time;
     private byte[] data;
     private boolean fromThisDevice;
@@ -59,7 +61,17 @@ public class Protocol implements Serializable {
         time = Utils.getTime(false);
     }
 
-    public void setData(byte[] data) {
+    public void setData(byte[] data) throws Exception {
+        if(data.length > BUFFER_SIZE)
+            throw new Exception("Exceeded buffer size!!!");
+        this.data = new byte[BUFFER_SIZE];
+        for (int i = 0; i < data.length; i++) {
+            this.data[i] = data[i];
+        }
+        //FUCK THIS:
+//        System.arraycopy(this.data, 0, data, 0, data.length);
+    }
+    public void setAnySizeData_notForSending_(byte[] data) {
         this.data = new byte[data.length];
         for (int i = 0; i < data.length; i++) {
             this.data[i] = data[i];
@@ -67,6 +79,7 @@ public class Protocol implements Serializable {
         //FUCK THIS:
 //        System.arraycopy(this.data, 0, data, 0, data.length);
     }
+
     public byte[] getData() {
         return data;
     }
