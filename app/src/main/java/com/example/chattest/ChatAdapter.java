@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
+import com.example.chattest.utils.Constants;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +30,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
     private final LayoutInflater inflater;
     private final List<Protocol> protocols;
     private Context context;
+    MainActivity core;
 
     //Конструктор адаптера
     ChatAdapter(Context context, List<Protocol> protocols){
@@ -57,7 +60,8 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
 
         if(getItemViewType(position) == 1) {
             if(protocol.getMsgCode() == MsgCodes.fileEndCode) {
-                Bitmap bmp = BitmapFactory.decodeByteArray(protocol.getData(), 0, protocol.getData().length);
+                byte[] imgData = ((MainActivity)this.context).byteArrayBufferFileYours.toByteArray();
+                Bitmap bmp = BitmapFactory.decodeByteArray(imgData, 0, imgData.length);
                 holder.viewYou.setImageBitmap(bmp);
                 holder.textViewYouTime.setVisibility(View.INVISIBLE);
                 holder.textViewAnother.setVisibility(View.INVISIBLE);
@@ -65,7 +69,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
                 holder.textViewYou.setVisibility(View.INVISIBLE);
             } else {
                 holder.textViewYou.setText(new String(protocol.getData()));
-                holder.textViewYouTime.setText(protocol.getTime());
+//                holder.textViewYouTime.setText(protocol.getTime());
                 holder.textViewAnother.setVisibility(View.INVISIBLE);
                 holder.textViewAnotherTime.setVisibility(View.INVISIBLE);
                 holder.viewYou.setVisibility(View.INVISIBLE);
@@ -73,7 +77,9 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
             }
         } else {
             if(protocol.getMsgCode() == MsgCodes.fileEndCode) {
-                Bitmap bmp = BitmapFactory.decodeByteArray(protocol.getData(), 0, protocol.getData().length);
+                byte[] imgData = ((MainActivity)this.context).byteArrayBufferFileTheir.toByteArray();
+                Bitmap bmp = BitmapFactory.decodeByteArray(imgData, 0, imgData.length);
+                Log.e(Constants.TAG, "WHY2::::" + bmp.describeContents());
                 holder.viewAnother.setImageBitmap(bmp);
                 holder.textViewAnotherTime.setVisibility(View.INVISIBLE);
                 holder.textViewYou.setVisibility(View.INVISIBLE);
@@ -81,7 +87,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder>{
                 holder.textViewAnother.setVisibility(View.INVISIBLE);
             } else {
                 holder.textViewAnother.setText(new String(protocol.getData()));
-                holder.textViewAnotherTime.setText(protocol.getTime());
+//                holder.textViewAnotherTime.setText(protocol.getTime());
                 holder.textViewYou.setVisibility(View.INVISIBLE);
                 holder.textViewYouTime.setVisibility(View.INVISIBLE);
                 holder.viewYou.setVisibility(View.INVISIBLE);

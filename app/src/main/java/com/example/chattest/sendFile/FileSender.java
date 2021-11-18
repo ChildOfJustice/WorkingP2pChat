@@ -82,8 +82,13 @@ public class FileSender {
         String fileLengthStr = fileName;
         Protocol startFileMsg = new Protocol();
         startFileMsg.setMsgCode(MsgCodes.imgStartCode);
-        startFileMsg.setCurrentTime();
-        startFileMsg.setData(fileLengthStr.getBytes());
+//        startFileMsg.setCurrentTime();
+        try {
+            startFileMsg.setData(fileLengthStr.getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(Constants.TAG, "Cannot set data to send the msg: " + fileLengthStr);
+        }
 
         sendingQueue.send(startFileMsg);
 
@@ -102,7 +107,7 @@ public class FileSender {
 //        networkManager.sendingQueue.sendNode(ourMsgProtocol);
 
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-        byte[] myBuffer = new byte[1024*7];//1024*7
+        byte[] myBuffer = new byte[1024*3];//1024*7
         while ((bytesRead = byteArrayInputStream.read(myBuffer, 0, myBuffer.length)) != -1)
         {
             double p = myBuffer.length;
@@ -117,21 +122,31 @@ public class FileSender {
 
             Protocol ourMsgProtocol = new Protocol();
             ourMsgProtocol.setMsgCode(MsgCodes.imgPartCode);
-            ourMsgProtocol.setCurrentTime();
+//            ourMsgProtocol.setCurrentTime();
 
 //                    byte[] aaa = toBytes(myBuffer);
-            ourMsgProtocol.setData(myBuffer);//toBytes(myBuffer)
+            try {
+                ourMsgProtocol.setData(myBuffer);//toBytes(myBuffer)
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e(Constants.TAG, "Cannot set data to send the img node with length: " + myBuffer.length);
+            }
 
             fileSize += bytesRead;
-            sendingQueue.send(ourMsgProtocol); // send the todo encrypted message
+            sendingQueue.send(ourMsgProtocol);
 
         }
 
         String lastNodeBytesCount = String.valueOf(fileSize);
         Protocol endFileMsg = new Protocol();
         endFileMsg.setMsgCode(MsgCodes.imgEndCode);
-        endFileMsg.setCurrentTime();
-        endFileMsg.setData(lastNodeBytesCount.getBytes());
+//        endFileMsg.setCurrentTime();
+        try {
+            endFileMsg.setData(lastNodeBytesCount.getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(Constants.TAG, "Cannot set data to send the msg: " + lastNodeBytesCount);
+        }
         sendingQueue.send(endFileMsg);
     }
 

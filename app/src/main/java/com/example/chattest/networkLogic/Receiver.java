@@ -10,6 +10,7 @@ import com.example.chattest.networkLogic.protocol.MsgCodes;
 import com.example.chattest.networkLogic.protocol.Protocol;
 import com.example.chattest.utils.Constants;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -19,7 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class Receiver extends Thread implements Serializable {
 
-    public static final int bufferSize = 16238460;
+    public static final int bufferSize = Constants.PROTOCOL_SIZE;
 
     private final ThreadPoolExecutor deserializationQueue;
 
@@ -49,6 +50,10 @@ public class Receiver extends Thread implements Serializable {
     public void run() {
         byte[] buffer = new byte[bufferSize];
         int bytes;
+        int curReceivedBytes;
+        int allReceivedBytes = 0;
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         while (socket != null) {
             try {
@@ -60,13 +65,40 @@ public class Receiver extends Thread implements Serializable {
 
                 while(inputStream.available() != 0);
 
-                bytes = inputStream.read(buffer);
+                byte[] result;
 
-                if (bytes > 0) {
-                    Log.d(Constants.TAG, "Received bytes from inputStream: " + bytes);
 
-                    scheduleDeserializationTask(buffer, bytes);
+                while(true){
+                    curReceivedBytes = inputStream.read(buffer);
+                    if(curReceivedBytes + allReceivedBytes > bufferSize){
+                        System.out.println("smth is WRONG: " + curReceivedBytes + " all: " + allReceivedBytes);
+                        int nextObjectBytesReceived = curReceivedBytes + allReceivedBytes - bufferSize;
+                        baos.write(buffer, 0, nextObjectBytesReceived);
+                        result = baos.toByteArray();
+
+                        baos.reset();
+                        baos.write(buffer, nextObjectBytesReceived-1, curReceivedBytes);
+                        allReceivedBytes = curReceivedBytes;
+                        break;
+                    } else {
+                        baos.write(buffer, 0, curReceivedBytes);
+                        allReceivedBytes += curReceivedBytes;
+                        System.out.println("RCVD: " + curReceivedBytes);
+                        if(allReceivedBytes == bufferSize){
+                            result = baos.toByteArray();
+                            baos.reset();
+                            allReceivedBytes = 0;
+                            break;
+                        }
+                    }
                 }
+                //bytes = inputStream.read(buffer);
+
+                //if (bytes > 0) {
+                Log.d(Constants.TAG, "Received bytes from inputStream: " + result.length);
+
+                scheduleDeserializationTask(result);
+                //}
             } catch (SocketException se){
                 if(se.getMessage().contains("Socket closed")){
                     running = false;
@@ -79,7 +111,7 @@ public class Receiver extends Thread implements Serializable {
         Log.e(Constants.TAG, "WHILE BREAK");
     }
 
-    private void scheduleDeserializationTask(byte[] data, int receivedBytes){
+    private void scheduleDeserializationTask(byte[] data){
         Runnable task = () -> {
             Protocol protocol = Protocol.deserialize(data);
             if(protocol == null){
@@ -90,7 +122,12 @@ public class Receiver extends Thread implements Serializable {
                 if(cipher != null) {
                     if(protocol.getMsgCode() != MsgCodes.keyCode && protocol.getMsgCode() != MsgCodes.imgStartCode && protocol.getMsgCode() != MsgCodes.imgPartCode && protocol.getMsgCode() != MsgCodes.imgEndCode){
                         byte[] decryptedData = cipher.decrypt(protocol.getData());
-                        protocol.setData(decryptedData);
+                        try {
+                            protocol.setData(decryptedData);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Log.e(Constants.TAG, "Cannot set data after decryption: " + e.getMessage());
+                        }
                         Log.d(Constants.TAG, "Received a enc protocol node, decrypted is: " + new String(protocol.getData()));
                     }
                 } else {

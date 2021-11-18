@@ -10,6 +10,8 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -301,7 +303,12 @@ public class MainActivity extends AppCompatActivity {
 
             Protocol ourKeyProtocol = new Protocol();
             ourKeyProtocol.setMsgCode(MsgCodes.keyCode);
-            ourKeyProtocol.setData(rsaTemp.getPubKey());
+            try {
+                ourKeyProtocol.setData(rsaTemp.getPubKey());
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e(Constants.TAG, "Cannot send pub key!!!: " + rsaTemp.getPubKey().length);
+            }
             clientObject.sendingQueue.send(ourKeyProtocol);
 
 //                rsaCipher.importPublicKey(Utils.readTextFileBytes(uri, this));
@@ -391,10 +398,14 @@ public class MainActivity extends AppCompatActivity {
     private void addMsgToQueue(String msg, byte msgCode){
         Protocol ourMsgProtocol = new Protocol();
         ourMsgProtocol.setMsgCode(msgCode);
-        ourMsgProtocol.setCurrentTime();
-        ourMsgProtocol.setData(msg.getBytes());
-
-        clientObject.sendingQueue.send(ourMsgProtocol);
+//        ourMsgProtocol.setCurrentTime();
+        try {
+            ourMsgProtocol.setData(msg.getBytes());
+            clientObject.sendingQueue.send(ourMsgProtocol);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(Constants.TAG, "Cannot set data to send the msg: " + msg);
+        }
     }
 
 
@@ -457,14 +468,17 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(Constants.TAG, "Received the img! img size is: " + new String(messageProtocol.getData()));
 
                     if(messageProtocol.isFromThisDevice()) {
+
+
                         byte[] imgBytes = byteArrayBufferFileYours.toByteArray();
+
                         Log.d(Constants.TAG, "You sent an Img with size: " + imgBytes.length);
     //                    Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
     //                    imageView.setImageBitmap(bmp);
 
                         Protocol fullImageProtocol = new Protocol();
                         fullImageProtocol.setFromThisDevice(true);
-                        fullImageProtocol.setData(imgBytes);
+                        //fullImageProtocol.setAnySizeData_notForSending_(imgBytes);
                         fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
                         protocols.add(fullImageProtocol);
                         adapter = new ChatAdapter(this, protocols);
@@ -472,14 +486,17 @@ public class MainActivity extends AppCompatActivity {
 
                         startedFileSending = false;
                     } else {
-                        byte[] imgBytes = byteArrayBufferFileTheir.toByteArray();
+//                        byte[] imgBytes = byteArrayBufferFileTheir.toByteArray();
+                        byte[] imgBytes = byteArrayBufferFileYours.toByteArray();
+                        Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+                        System.out.println("IMAGE2:::" + bmp.describeContents());
                         Log.d(Constants.TAG, "You received an Img with size: " + imgBytes.length);
                         //                    Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
                         //                    imageView.setImageBitmap(bmp);
 
                         Protocol fullImageProtocol = new Protocol();
                         fullImageProtocol.setFromThisDevice(false);
-                        fullImageProtocol.setData(imgBytes);
+//                        fullImageProtocol.setAnySizeData_notForSending_(imgBytes);
                         fullImageProtocol.setMsgCode(MsgCodes.fileEndCode);
                         protocols.add(fullImageProtocol);
                         adapter = new ChatAdapter(this, protocols);

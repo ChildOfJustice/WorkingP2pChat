@@ -96,7 +96,7 @@ public class SendingQueue {
                     Log.d(Constants.TAG, "Sent a node, full serialized size is: " + serialized.length);
 
                     tempProtocol.setFromThisDevice(true);
-                    tempProtocol.setCurrentTime();
+//                    tempProtocol.setCurrentTime();
 
                     core.addProtocolNode(tempProtocol);
                 }

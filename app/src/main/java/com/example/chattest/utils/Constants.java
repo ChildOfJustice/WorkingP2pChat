@@ -6,4 +6,7 @@ public class Constants {
 
     static public final int openPubKeyFileRequestCode = 777;
     static public final int openPrivateKeyFileRequestCode = 888;
+
+    public static final int PROTOCOL_SIZE = 6138;
+    public static final int BUFFER_SIZE = 5981;
 }
